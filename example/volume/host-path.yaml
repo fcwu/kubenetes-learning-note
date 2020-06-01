@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pd
+spec:
+  containers:
+  - image: k8s.gcr.io/test-webserver
+    name: test-container
+    volumeMounts:
+    - mountPath: /test-pd
+      name: test-volume
+  volumes:
+  - name: test-volume
+    hostPath:
+      # directory location on host
+      path: /vagrant
+      # this field is optional
+      type: Directory
+      # (空字串)	掛載 host path 到 pod 之前，不會做任何檢查
+      # DirectoryOrCreate	若 host path 指定的目錄不存在，則會新建一個目錄，並設定為權限 0755，目錄的 ownership & group 則是 kubelet
+      # Directory	host path 指定的目錄必須存在
+      # FileOrCreate	若 host path 指定的檔案不存在，則會新建一個檔案，並設定為權限 0755，目錄的 ownership & group 則是 kubelet
+      # File	host path 指定的檔案必須存在
+      # Socket	host path 指定的 UNIX socket 必須存在
+      # CharDevice	host path 指定的 character device 必須存在
+      # BlockDevice	host path 指定的 block device 必須存在

@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: special-config
+data:
+  special.level: very
+  special.type: charm
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dapi-test-pod
+spec:
+  containers:
+    - name: test-container
+      image: k8s.gcr.io/busybox
+      # 在 /etc/config 目錄中就會看到兩個檔案
+      # /etc/config/special.level => very
+      # /etc/config/special.type => charm
+      command: [ "/bin/sh", "-c", "ls /etc/config/" ]
+      volumeMounts:
+      - name: config-volume
+        mountPath: /etc/config
+  volumes:
+    - name: config-volume
+      configMap:
+        # 指定要掛載的 configMap 名稱
+        name: special-config
+  restartPolicy: Never
