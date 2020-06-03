@@ -9,17 +9,10 @@
     - [Deployment](#deployment)
   - [Network](#network)
     - [DNS](#dns)
-      - [Service: Access from external cluster](#service-access-from-external-cluster)
-    - [Ingress](#ingress)
+    - [Service: Access from external cluster](#service-access-from-external-cluster)
     - [EndPoint](#endpoint)
   - [Storage](#storage)
     - [Volume Resources](#volume-resources)
-      - [emptyDir](#emptydir)
-      - [hostPath](#hostpath)
-      - [local](#local)
-      - [nfs](#nfs)
-      - [secret](#secret)
-      - [configMap](#configmap)
     - [CSI](#csi)
   - [Security](#security)
   - [Management](#management)
@@ -36,6 +29,10 @@
 - [ ] write go code to access k8s apiserver
 - [ ] helm
 - [ ] k8s scheduler
+- [ ] kustomize
+- [ ] annotation
+- [ ] node affinity
+- [ ] apply or create https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects, https://kubernetes.cn/docs/tasks/manage-kubernetes-objects/imperative-config/#how-to-delete-objects
 - [ ] k3s
 
 ```bash
@@ -211,21 +208,25 @@ Reference
 - https://www.hwchiu.com/cni.html
 - https://www.hwchiu.com/tags/CNI/
 - CNI comparison: https://itnext.io/benchmark-results-of-kubernetes-network-plugins-cni-over-10gbit-s-network-updated-april-2019-4a9886efe9c4
+- traefik: https://docs.traefik.io/v1.7/user-guide/kubernetes/
 
 
 ### DNS
 
 - https://kubernetes.io/zh/docs/concepts/services-networking/dns-pod-service/
 - troubleshooting: https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+- https://coredns.io/2017/05/08/custom-dns-entries-for-kubernetes/
+- https://coredns.io/plugins/forward/
+- https://coredns.io/manual/toc/
 
 
-#### Service: Access from external cluster
+### Service: Access from external cluster
 
 Origin: http://dockone.io/article/4884
 
-**ClusterIP**
+#### ClusterIP
 
-![ClusterIP](/assets/ClusterIP.png)
+![ClusterIP](assets/ClusterIP1.png)
 
 - ClusterIP 服务是 Kubernetes 的默认服务。
 - 集群内的其它应用都可以访问该服务。
@@ -238,14 +239,14 @@ When to use
 
 access out of cluster
 
-```
-$ kubectl proxy --port=8080
-$ http://localhost:8080/api/v1/proxy/namespaces/default/services/my-internal-service:http/
+```bash
+kubectl proxy --port=8080
+http://localhost:8080/api/v1/proxy/namespaces/default/services/my-internal-service:http/
 ```
 
-**NodePort**
+#### NodePort
 
-![NodePort](http://dockone.io/uploads/article/20190626/58174ac44fdbacbbc89cec648260fcdf.png)
+![NodePort](assets/nodeport.png)
 
 - 在所有节点（虚拟机）上开放一个特定端口，任何发送到该端口的流量都被转发到对应服务。
 
@@ -255,9 +256,9 @@ When to use
 - 端口范围只能是 30000-32767
 - 如果节点/VM 的 IP 地址发生变化，你需要能处理这种情况。
 
-**LoadBalancer**
+#### LoadBalancer
 
-![LoadBalancer](http://dockone.io/uploads/article/20190626/d8631b315a7acdd6926ec5405ed1043f.png)
+![LoadBalancer](assets/lb.png)
 
 - LoadBalancer 服务是暴露服务到 internet 的标准方式。
 - 在 GKE 上，这种方式会启动一个 Network Load Balancer，它将给你一个单独的 IP 地址，转发所有流量到你的服务。
@@ -267,25 +268,24 @@ When to use
 - 所有通往你指定的端口的流量都会被转发到对应的服务。它没有过滤条件，没有路由等。这意味着你几乎可以发送任何种类的流量到该服务，像 HTTP，TCP，UDP，Websocket，gRPC 或其它任意种类。
 - 一个用 LoadBalancer 暴露的服务都会有它自己的 IP 地址，每个用到的 LoadBalancer 都需要付费，这将是非常昂贵的。
 
-**Ingress**
+#### Ingress
 
-Described in [Ingress](#ingress)
-
-![Ingress](http://dockone.io/uploads/article/20190626/ab886a9dd4e912cf6f5a1f3ed983ac4c.png)
+Described in [Ingress](ingress.md)
 
 - Ingress 事实上不是一种服务类型。
-- 相反，它处于多个服务的前端，扮演着“智能路由”或者集群入口的角色。
+- 相反，它处于多个服务的前端，扮演着"智能路由"或者集群入口的角色。
 
-### Ingress
+- [Ingress comparison](https://medium.com/flant-com/comparing-ingress-controllers-for-kubernetes-9b397483b46b)
 
-  - A/B testing
-    - A/B testing (also sometimes referred to as split testing) is the practice of showing two variants of the same web page to different segments of website visitors at the same time and comparing which variant drives more conversions.  
-  - Blue/Green release: 
-    - You can do a blue-green release if you've tested the new version in a testing environment and are very certain that the new version will function correctly in production. Always using feature toggles is a good way to increase your confidence in a new version, since the new version functions exactly like the old until someone flips a feature toggle.
-  - Canary release
-    - You need to do a canary release if you're not completely certain that the new version will function correctly in production. Even if you are a thorough tester, the Internet is a large and complex place and is always coming up with unexpected challenges. Even if you use feature toggles, one might be implemented incorrectly.
+Factors of traffic distribution
 
-- Ingress comparison: https://medium.com/flant-com/comparing-ingress-controllers-for-kubernetes-9b397483b46b
+- A/B testing
+  - A/B testing (also sometimes referred to as split testing) is the practice of showing two variants of the same web page to different segments of website visitors at the same time and comparing which variant drives more conversions.  
+- Blue/Green release
+  - You can do a blue-green release if you've tested the new version in a testing environment and are very certain that the new version will function correctly in production. Always using feature toggles is a good way to increase your confidence in a new version, since the new version functions exactly like the old until someone flips a feature toggle.
+- Canary release
+  - You need to do a canary release if you're not completely certain that the new version will function correctly in production. Even if you are a thorough tester, the Internet is a large and complex place and is always coming up with unexpected challenges. Even if you use feature toggles, one might be implemented incorrectly.
+- Shadowing (mirroring)
 
 ### EndPoint
 
@@ -408,6 +408,65 @@ https://www.hwchiu.com/tags/CSI/
 - [ ] RoleBindings
 - [ ] Roles
 - [ ] ServiceAccount (sa)
+
+```bash
+$ k api-resources
+NAME                              SHORTNAMES   APIGROUP                       NAMESPACED   KIND
+bindings                                                                      true         Binding
+componentstatuses                 cs                                          false        ComponentStatus
+configmaps                        cm                                          true         ConfigMap
+endpoints                         ep                                          true         Endpoints
+events                            ev                                          true         Event
+limitranges                       limits                                      true         LimitRange
+namespaces                        ns                                          false        Namespace
+nodes                             no                                          false        Node
+persistentvolumeclaims            pvc                                         true         PersistentVolumeClaim
+persistentvolumes                 pv                                          false        PersistentVolume
+pods                              po                                          true         Pod
+podtemplates                                                                  true         PodTemplate
+replicationcontrollers            rc                                          true         ReplicationController
+resourcequotas                    quota                                       true         ResourceQuota
+secrets                                                                       true         Secret
+serviceaccounts                   sa                                          true         ServiceAccount
+services                          svc                                         true         Service
+mutatingwebhookconfigurations                  admissionregistration.k8s.io   false        MutatingWebhookConfiguration
+validatingwebhookconfigurations                admissionregistration.k8s.io   false        ValidatingWebhookConfiguration
+customresourcedefinitions         crd,crds     apiextensions.k8s.io           false        CustomResourceDefinition
+apiservices                                    apiregistration.k8s.io         false        APIService
+controllerrevisions                            apps                           true         ControllerRevision
+daemonsets                        ds           apps                           true         DaemonSet
+deployments                       deploy       apps                           true         Deployment
+replicasets                       rs           apps                           true         ReplicaSet
+statefulsets                      sts          apps                           true         StatefulSet
+tokenreviews                                   authentication.k8s.io          false        TokenReview
+localsubjectaccessreviews                      authorization.k8s.io           true         LocalSubjectAccessReview
+selfsubjectaccessreviews                       authorization.k8s.io           false        SelfSubjectAccessReview
+selfsubjectrulesreviews                        authorization.k8s.io           false        SelfSubjectRulesReview
+subjectaccessreviews                           authorization.k8s.io           false        SubjectAccessReview
+horizontalpodautoscalers          hpa          autoscaling                    true         HorizontalPodAutoscaler
+cronjobs                          cj           batch                          true         CronJob
+jobs                                           batch                          true         Job
+certificatesigningrequests        csr          certificates.k8s.io            false        CertificateSigningRequest
+leases                                         coordination.k8s.io            true         Lease
+endpointslices                                 discovery.k8s.io               true         EndpointSlice
+events                            ev           events.k8s.io                  true         Event
+ingresses                         ing          extensions                     true         Ingress
+ingressclasses                                 networking.k8s.io              false        IngressClass
+ingresses                         ing          networking.k8s.io              true         Ingress
+networkpolicies                   netpol       networking.k8s.io              true         NetworkPolicy
+runtimeclasses                                 node.k8s.io                    false        RuntimeClass
+poddisruptionbudgets              pdb          policy                         true         PodDisruptionBudget
+podsecuritypolicies               psp          policy                         false        PodSecurityPolicy
+clusterrolebindings                            rbac.authorization.k8s.io      false        ClusterRoleBinding
+clusterroles                                   rbac.authorization.k8s.io      false        ClusterRole
+rolebindings                                   rbac.authorization.k8s.io      true         RoleBinding
+roles                                          rbac.authorization.k8s.io      true         Role
+priorityclasses                   pc           scheduling.k8s.io              false        PriorityClass
+csidrivers                                     storage.k8s.io                 false        CSIDriver
+csinodes                                       storage.k8s.io                 false        CSINode
+storageclasses                    sc           storage.k8s.io                 false        StorageClass
+volumeattachments                              storage.k8s.io                 false        VolumeAttachment
+```
 
 ## Management
 
