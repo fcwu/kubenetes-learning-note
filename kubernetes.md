@@ -1,23 +1,39 @@
 # Kubernetes
 
-<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=3 orderedList=false} -->
+<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=4 orderedList=false} -->
 
 <!-- code_chunk_output -->
 
-- [Kubernetes](#kubernetes)
-  - [Runtime](#runtime)
+- [Runtime](#runtime)
+  - [Workloads Controllers](#workloads-controllers)
+    - [ReplicationController](#replicationcontroller)
+    - [ReplicaSet](#replicaset)
     - [Deployment](#deployment)
-  - [Network](#network)
-    - [DNS](#dns)
-    - [Service: Access from external cluster](#service-access-from-external-cluster)
-    - [EndPoint](#endpoint)
-  - [Storage](#storage)
-    - [Volume Resources](#volume-resources)
-    - [CSI](#csi)
-  - [Security](#security)
-  - [Management](#management)
-  - [Tools](#tools)
-  - [Reference](#reference)
+    - [StatefulSet](#statefulset)
+    - [DaemonSet](#daemonset)
+    - [Job & CronJob](#job-cronjob)
+  - [ConfigMap & Secret](#configmap-secret)
+- [Network](#network)
+  - [DNS](#dns)
+  - [Service: Access from external cluster](#service-access-from-external-cluster)
+    - [ClusterIP](#clusterip)
+    - [NodePort](#nodeport)
+    - [LoadBalancer](#loadbalancer)
+    - [Ingress](#ingress)
+  - [EndPoint](#endpoint)
+- [Storage](#storage)
+  - [Volume Resources](#volume-resources)
+    - [emptyDir](#emptydir)
+    - [hostPath](#hostpath)
+    - [local](#local)
+    - [nfs](#nfs)
+    - [secret](#secret)
+    - [configMap](#configmap)
+  - [CSI](#csi)
+- [Security](#security)
+- [Management](#management)
+- [Tools](#tools)
+- [Reference](#reference)
 
 <!-- /code_chunk_output -->
 
@@ -78,13 +94,13 @@ $ k get events -w
   - [ ] StatefulSets (sts)
   - [ ] ReplicaSets (rs)
 
-### Deployment
+### Workloads Controllers
 
 origin: https://www.cnblogs.com/boshen-hzb/p/7097811.html
 
 TODO: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 
-```
+```bash
 $ k create -f nginx.yaml
 $ k scale deploy nginx --replicas 2
 $ k set image deployment.apps/nginx-deployment nginx=nginx:1.18
@@ -105,18 +121,18 @@ $ kubectl rollout undo deployment/review-demo --namespace=scm
 $ kubectl rollout undo deployment/review-demo --to-revision=2 --namespace=scm
 ```
 
-ReplicationController
+#### ReplicationController
 
 - 确保pod数量
 - 确保pod健康
-- 弹性伸缩 
+- 弹性伸缩
 - 滚动升级
 
-ReplicaSet
+#### ReplicaSet
 
 在新版本的Kubernetes中建议使用ReplicaSet来取代ReplicationCtronller。ReplicaSet跟ReplicationCtronller没有本质的不同，只是名字不一样，并且ReplicaSet支持集合式的selector
 
-Deployment
+#### Deployment
 
 - Replication Controller全部功能
 - 事件和状态查看
@@ -135,7 +151,7 @@ YAML parameters
 
 Example
 
-```
+```yaml
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -194,6 +210,46 @@ spec:
             containerPort: 8080
 ```
 
+#### StatefulSet
+
+https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/
+
+#### DaemonSet
+
+https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+
+#### Job & CronJob
+
+- [Example job.yaml](./example/workload/job.yaml)
+- [Job Spec](https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/#writing-a-job-spec)
+- [Job Pattern](https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/#job-patterns)
+
+```bash
+k apply -f example/workload/job.yaml
+k logs jobs/pi
+k describe jobs/pi
+k get pods --selector=job-name=pi --output=jsonpath='{.items[*].metadata.name}'
+```
+
+Job spec
+
+- .spec.backoffLimit
+- .spec.template.spec.restartPolicy
+- kubectl delete jobs/pi
+- .spec.activeDeadlineSeconds
+- .spec.ttlSecondsAfterFinished
+- .spec.completions
+- .spec.parallelism
+
+CronJob Spec
+
+- startingDeadlineSeconds
+- concurrencyPolicy
+
+### ConfigMap & Secret
+
+https://kubernetes.io/docs/concepts/configuration/overview/
+
 ## Network
 
 - [ ] Network
@@ -210,7 +266,6 @@ Reference
 - CNI comparison: https://itnext.io/benchmark-results-of-kubernetes-network-plugins-cni-over-10gbit-s-network-updated-april-2019-4a9886efe9c4
 - traefik: https://docs.traefik.io/v1.7/user-guide/kubernetes/
 
-
 ### DNS
 
 - https://kubernetes.io/zh/docs/concepts/services-networking/dns-pod-service/
@@ -218,7 +273,6 @@ Reference
 - https://coredns.io/2017/05/08/custom-dns-entries-for-kubernetes/
 - https://coredns.io/plugins/forward/
 - https://coredns.io/manual/toc/
-
 
 ### Service: Access from external cluster
 
@@ -477,6 +531,8 @@ volumeattachments                              storage.k8s.io                 fa
 
 - tui: k9s
 - gui: https://github.com/vmware-tanzu/octant
+- ELK
+- Prometheus Grafana
 
 **kubectl Plugins**
 

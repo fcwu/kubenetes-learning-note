@@ -5,6 +5,7 @@
 <!-- code_chunk_output -->
 
 - [Architecture](#architecture)
+- [Quick-Start Guide](#quick-start-guide)
 
 <!-- /code_chunk_output -->
 
