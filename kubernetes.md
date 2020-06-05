@@ -12,7 +12,9 @@
     - [StatefulSet](#statefulset)
     - [DaemonSet](#daemonset)
     - [Job & CronJob](#job-cronjob)
-  - [ConfigMap & Secret](#configmap-secret)
+  - [Configuration](#configuration)
+    - [ConfigMap](#configmap)
+    - [Secret](#secret)
 - [Network](#network)
   - [DNS](#dns)
   - [Service: Access from external cluster](#service-access-from-external-cluster)
@@ -27,8 +29,8 @@
     - [hostPath](#hostpath)
     - [local](#local)
     - [nfs](#nfs)
-    - [secret](#secret)
-    - [configMap](#configmap)
+    - [secret](#secret-1)
+    - [configMap](#configmap-1)
   - [CSI](#csi)
 - [Security](#security)
 - [Management](#management)
@@ -75,30 +77,22 @@ $ k get events -w
 
 ## Runtime
 
-- [ ] resource
-  - [ ] ConfigMaps (cm)
-  - [ ] CRD
-  - [ ] CronJobs
-  - [ ] Deployment (deploy)
-  - [ ] HorizentalPodAutoScale (hpa)
-  - [ ] Jobs
-  - [ ] Nodes (no)
-  - [ ] Pods (po)
-  - [ ] PodPreset
-  - [ ] PodTemplates
-  - [ ] ProdSecurityPolicies (psp)
-  - [ ] ResourceQuotas (quotas)
-  - [ ] PodDisruptionBudge (pdb)
-  - [ ] ReplicaionController (rc)
-  - [ ] Secrets
-  - [ ] StatefulSets (sts)
-  - [ ] ReplicaSets (rs)
+- [ ] CRD
+- [ ] HorizentalPodAutoScale (hpa)
+- [ ] Nodes (no)
+- [ ] Pods (po)
+- [ ] PodPreset
+- [ ] PodTemplates
+- [ ] ProdSecurityPolicies (psp)
+- [ ] ResourceQuotas (quotas)
+- [ ] PodDisruptionBudge (pdb)
+- [ ] ReplicaionController (rc)
+- [ ] ReplicaSets (rs)
 
 ### Workloads Controllers
 
-origin: https://www.cnblogs.com/boshen-hzb/p/7097811.html
-
-TODO: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+- origin: https://www.cnblogs.com/boshen-hzb/p/7097811.html
+- TODO: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 
 ```bash
 $ k create -f nginx.yaml
@@ -246,18 +240,39 @@ CronJob Spec
 - startingDeadlineSeconds
 - concurrencyPolicy
 
-### ConfigMap & Secret
+### Configuration
 
-https://kubernetes.io/docs/concepts/configuration/overview/
+#### ConfigMap
+
+Origin: https://kubernetes.io/docs/concepts/configuration/overview/
+
+- [example configmap.yaml](./example/configmap.yaml)
+
+#### Secret
+
+```bash
+# Create files needed for the rest of the example.
+echo -n 'admin' > ./username.txt
+echo -n '1f2d1e2e67df' > ./password.txt
+k create secret generic db-user-pass --from-file=./username.txt --from-file=./
+k create secret generic prod-db-secret --from-literal=username=produser --from-literal=password=Y4nys7f11password.txt
+k get secrets
+k describe secrets/db-user-pass
+k get secrets/db-user-pass -o yaml
+echo 'MWYyZDFlMmU2N2Rm' | base64 --decode
+k edit secrets mysecret
+```
+
+- `ConfigMapAndSecretChangeDetectionStrategy`
+- `ImmutableEmphemeralVolumes` `immutable`
+- `imagePullSecrets` to pass a secret that contains a Docker
+  - [Add ImagePullSecrets to a service account](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod)
+  - [Injecting Information into Pods Using a PodPreset](https://kubernetes.io/docs/tasks/inject-data-application/podpreset/)
 
 ## Network
 
-- [ ] Network
-  - [ ] dns
-  - [ ] Ingress (ing)
-  - [ ] NetworkPolicies (netpol)
-  - [ ] Endpoints (dp)
-  - [ ] Service (svc)
+- [ ] NetworkPolicies (netpol)
+- [ ] Endpoints (dp)
 
 Reference
 
@@ -425,7 +440,7 @@ apt install -y nfs-common
 
 In host,
 
-```
+```bash
 $ cat /etc/exports
 /home/u/nfs/nfs 10.144.48.106(rw,sync,no_subtree_check,insecure)
 $ exportfs -r
@@ -533,6 +548,7 @@ volumeattachments                              storage.k8s.io                 fa
 - gui: https://github.com/vmware-tanzu/octant
 - ELK
 - Prometheus Grafana
+- [Kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)
 
 **kubectl Plugins**
 
