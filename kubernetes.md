@@ -15,6 +15,9 @@
   - [Configuration](#configuration)
     - [ConfigMap](#configmap)
     - [Secret](#secret)
+    - [Manage Resource](#manage-resource)
+    - [Pod Overhead](#pod-overhead)
+    - [Pod Priority and Preemption](#pod-priority-and-preemption)
 - [Network](#network)
   - [DNS](#dns)
   - [Service: Access from external cluster](#service-access-from-external-cluster)
@@ -268,6 +271,37 @@ k edit secrets mysecret
 - `imagePullSecrets` to pass a secret that contains a Docker
   - [Add ImagePullSecrets to a service account](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod)
   - [Injecting Information into Pods Using a PodPreset](https://kubernetes.io/docs/tasks/inject-data-application/podpreset/)
+
+#### Manage Resource
+
+Request and Limit: it’s possible (and allowed) for a container to use more resource than its **request** for that resource specifies. However, a container is not allowed to use more than its resource **limit**
+
+Each Container of a Pod can specify one or more of the following:
+
+- spec.containers[].resources.limits.cpu
+- spec.containers[].resources.limits.memory
+- spec.containers[].resources.limits.hugepages-<size>
+- spec.containers[].resources.requests.cpu
+- spec.containers[].resources.requests.memory
+- spec.containers[].resources.requests.hugepages-<size>
+- spec.containers[].resources.limits.ephemeral-storage
+- spec.containers[].resources.requests.ephemeral-storage
+
+Extended Resources: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#managing-extended-resources
+
+Troubleshooting
+
+- kubectl describe pod frontend | grep -A 3 Events
+- kubectl describe nodes e2e-test-node-pool-4lw4
+- kubectl describe pod simmemleak-hra99
+
+#### Pod Overhead
+
+Pod Overhead is a feature for accounting for the resources consumed by the Pod infrastructure on top of the container requests & limits. (used by kata container)
+
+#### Pod Priority and Preemption
+
+https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
 
 ## Network
 
