@@ -27,13 +27,12 @@
     - [Ingress](#ingress)
   - [EndPoint](#endpoint)
 - [Storage](#storage)
-  - [Volume Resources](#volume-resources)
+  - [Volume Spec](#volume-spec)
+  - [Volume Type](#volume-type)
     - [emptyDir](#emptydir)
     - [hostPath](#hostpath)
     - [local](#local)
     - [nfs](#nfs)
-    - [secret](#secret-1)
-    - [configMap](#configmap-1)
   - [CSI](#csi)
 - [Security](#security)
 - [Management](#management)
@@ -249,21 +248,56 @@ CronJob Spec
 
 Origin: https://kubernetes.io/docs/concepts/configuration/overview/
 
+Example: 
 - [example configmap.yaml](./example/configmap.yaml)
+- [example/volume/config-map.yaml](example/volume/config-map.yaml)
 
 #### Secret
+secret 顧名思義就是存放機密性的資料，而 secret volume 有以下幾個特點：
+
+- 要使用 secret volume 必須先定義 secret resource object 後，再掛載為 secret volume
+- secret volume 會存在於 /tmpfs 中，也就是 RAM 中，不會存在於硬碟上
+- 若透過 subPath 掛載 secret volume，若是後續 secret volume 有更新，就不會反應到該 subPath 上
+
+[How to use secret?](https://kubernetes.io/docs/concepts/configuration/secret/)
 
 ```bash
 # Create files needed for the rest of the example.
 echo -n 'admin' > ./username.txt
 echo -n '1f2d1e2e67df' > ./password.txt
-k create secret generic db-user-pass --from-file=./username.txt --from-file=./
-k create secret generic prod-db-secret --from-literal=username=produser --from-literal=password=Y4nys7f11password.txt
-k get secrets
-k describe secrets/db-user-pass
-k get secrets/db-user-pass -o yaml
-echo 'MWYyZDFlMmU2N2Rm' | base64 --decode
-k edit secrets mysecret
+kubectl create secret generic db-user-pass --from-file=./username.txt --from-file=./password.txt
+kubectl create secret generic db-user-pass --from-file=username=./username.txt --from-file=password=./password.txt
+kubectl get secrets
+kubectl describe secrets/db-user-pass
+
+# create manually
+cat > secret.yaml <<EOL
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret
+type: Opaque
+data:
+  username: $(echo -n 'admin' | base64)
+  password: $(echo -n '1f2d1e2e67df' | base64)
+EOL
+kubectl apply -f ./secret.yaml
+
+# decode secret
+$ kubectl get secret mysecret -o yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  creationTimestamp: 2016-01-22T18:41:56Z
+  name: mysecret
+  namespace: default
+  resourceVersion: "164619"
+  uid: cfee02d6-c137-11e5-8d73-42010af00002
+type: Opaque
+data:
+  username: YWRtaW4=
+  password: MWYyZDFlMmU2N2Rm
+$ echo 'MWYyZDFlMmU2N2Rm' | base64 --decode
 ```
 
 - `ConfigMapAndSecretChangeDetectionStrategy`
@@ -405,7 +439,24 @@ Reference:
 - https://godleon.github.io/blog/Kubernetes/k8s-Volume-Overview/
 - https://ieevee.com/tech/2019/01/17/local-volume.html
 
-### Volume Resources
+### Volume Spec
+
+這裡 PV 會有四種狀態 (STATUS)
+
+- Available：表示 PV 為可用狀態
+- Bound：表示已綁定到 PVC
+- Released：PVC 已被刪除，但是尚未回收
+- Failed：回收失敗
+
+PV 有三種回收策略 (RECLAIM POLICY)，分別是
+
+- Retain：手動回收
+- Recycle：透過刪除命令 rm -rf /thevolume/*
+- Delete：用於 AWS EBS, GCE PD, Azure Disk 等儲存後端，刪除 PV 的同時也會一併刪除後端儲存磁碟。
+
+use nfs-client to as StorageClass: [example/volume/nfs-client.yaml](example/volume/nfs-client.yaml)
+
+### Volume Type
 
 - subPath: 要掛載的目錄中可能包含了多個子目錄，而這些子目錄恰巧又分別被多個不同的 container 使用，此時就可以透過 subPath 的方式來簡化 volume 的設定
 - Expanded Environment Variables: $(POD_NAME) - 透過 Expanded Environment Variables　的搭配，可以在 YAML 定義檔中，使用與 pod 相關的識別資訊，可以讓 subPath 在使用上更加的彈性
@@ -464,43 +515,40 @@ Examples:
 
 #### nfs
 
-NFS server could not start normally in container, because [it's required special parameters to mount overlayfs](https://serverfault.com/questions/949892/nfs-export-an-overlay-of-ext4-and-btrfs)
+NFS server could not start normally in container, because [it's required special parameters to mount overlayfs](https://serverfault.com/questions/949892/nfs-export-an-overlay-of-ext4-and-btrfs). [NFS-Client](https://www.hwchiu.com/kubernetes-storage-ii.html) is better solution.
 
-In worker
+In every nodes,
 
 ```bash
 apt install -y nfs-common
 ```
 
-In host,
+In NFS server,
 
 ```bash
 $ cat /etc/exports
 /home/u/nfs/nfs 10.144.48.106(rw,sync,no_subtree_check,insecure)
+$ chmod 777 /home/u/nfs/nfs
 $ exportfs -r
 $ showmount -e localhost
 ```
 
+```bash
+helm install nfs-client stable/nfs-client-provisioner \
+  --set nfs.server=10.144.48.106 \
+  --set nfs.path=/home/u/nfs/nfs
+```
+
+use nfs-client to as StorageClass: [example/volume/nfs-client.yaml](example/volume/nfs-client.yaml)
+
 - Why `insecure` required? [access denied](https://serverfault.com/questions/107546/mount-nfs-access-denied-by-server-while-mounting)
-- Example: [example/volume/nfs.yaml](example/volume/nfs.yaml)
-
-#### secret
-
-secret 顧名思義就是存放機密性的資料，而 secret volume 有以下幾個特點：
-
-- 要使用 secret volume 必須先定義 secret resource object 後，再掛載為 secret volume
-- secret volume 會存在於 /tmpfs 中，也就是 RAM 中，不會存在於硬碟上
-- 若透過 subPath 掛載 secret volume，若是後續 secret volume 有更新，就不會反應到該 subPath 上
-
-[How to use secret?](https://kubernetes.io/docs/concepts/configuration/secret/)
-
-#### configMap
-
-- Example: [example/volume/config-map.yaml](example/volume/config-map.yaml)
+- Example
+  - [example/volume/nfs.yaml](example/volume/nfs.yaml)
 
 ### CSI
 
 https://www.hwchiu.com/tags/CSI/
+
 
 ## Security
 
