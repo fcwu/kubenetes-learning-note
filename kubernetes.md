@@ -249,6 +249,7 @@ CronJob Spec
 Origin: https://kubernetes.io/docs/concepts/configuration/overview/
 
 Example: 
+
 - [example configmap.yaml](./example/configmap.yaml)
 - [example/volume/config-map.yaml](example/volume/config-map.yaml)
 
@@ -356,6 +357,14 @@ Reference
 - https://coredns.io/2017/05/08/custom-dns-entries-for-kubernetes/
 - https://coredns.io/plugins/forward/
 - https://coredns.io/manual/toc/
+
+Troubleshooting
+
+```bash
+$ k run -it netutil --image=joffotron/docker-net-tools -n monitoring
+$ curl <service ip>:<service port>
+$ dig +search <svc> <prometheus-1-server>
+```
 
 ### Service: Access from external cluster
 

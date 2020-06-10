@@ -7,6 +7,8 @@
 - [使用一個現有 Helm Chart](#使用一個現有-helm-chart)
 - [Chart 的運作方式](#chart-的運作方式)
 - [如何建立自己的 Chart](#如何建立自己的-chart)
+- [Official site](#official-site)
+- [repository](#repository)
 - [Reference](#reference)
 
 <!-- /code_chunk_output -->
@@ -15,6 +17,7 @@
 ## 使用一個現有 Helm Chart
 
 ```
+sudo snap install helm --classic
 helm search hub wordpress
 helm show values stable/wordpress > values.yaml 
 helm install wordpress stable/wordpress -f values.yaml
