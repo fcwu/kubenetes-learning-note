@@ -361,9 +361,10 @@ Reference
 Troubleshooting
 
 ```bash
-$ k run -it netutil --image=joffotron/docker-net-tools -n monitoring
-$ curl <service ip>:<service port>
-$ dig +search <svc> <prometheus-1-server>
+k port-forward svc/grafana 12345:80 --address 0.0.0.0
+k run -it netutil --image=joffotron/docker-net-tools --rm --overrides='{"apiVersion": "v1", "spec": {"nodeSelector": { "kubernetes.io/arch": "amd64" }}}'
+curl <service ip>:<service port>
+dig +search <svc> <prometheus-1-server>
 ```
 
 ### Service: Access from external cluster
