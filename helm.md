@@ -13,20 +13,21 @@
 
 <!-- /code_chunk_output -->
 
-
 ## 使用一個現有 Helm Chart
 
-```
+```bash
 sudo snap install helm --classic
 helm search hub wordpress
 helm show values stable/wordpress > values.yaml 
 helm install wordpress stable/wordpress -f values.yaml
 ```
 
-```
+## Create a helm chart
+
+```bash
 $ helm create mcs-lite-chart
-$ helm install . --dry-run --debug
-$ helm install . --name mcs-lite-chart
+$ helm install mcs-lite-char . --dry-run --debug
+$ helm install mcs-lite-chart .
 $ helm list
 $ helm upgrade mcs-lite-app .
 $ helm rollback mcs-lite-app 1
@@ -34,12 +35,13 @@ $ helm package . --debug -d ./charts
 $ helm install ./charts/mcs-lite-chart-0.1.0.tgz
 ```
 
-helm 3
 
-```
+
+## Repo
+
+```bash
 helm repo add stable https://kubernetes-charts.storage.googleapis.com
 helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com
-
 ```
 
 ## Chart 的運作方式
@@ -108,7 +110,33 @@ https://helm.sh/docs/chart_best_practices/values/
 
 ## repository
 
-https://helm.sh/docs/topics/chart_repository/
+- tutor: https://helm.sh/docs/topics/chart_repository/
+- registry: https://helm.sh/docs/topics/registries/
+
+```bash
+helm package . --debug -d ./charts
+helm repo index charts
+```
+
+registry
+
+```bash
+export HELM_EXPERIMENTAL_OCI=1
+docker run -dp 5000:5000 --restart=always --name registry registry
+htpasswd -cB -b auth.htpasswd myuser mypass
+docker run -dp 5000:5000 --restart=always --name registry \
+  -v $(pwd)/auth.htpasswd:/etc/docker/registry/auth.htpasswd \
+  -e REGISTRY_AUTH="{htpasswd: {realm: localhost, path: /etc/docker/registry/auth.htpasswd}}" \
+  registry
+helm registry login -u myuser localhost:5000
+helm registry logout localhost:5000
+helm chart save mychart/ localhost:5000/myrepo/mychart:2.7.0
+helm chart list
+helm chart export localhost:5000/myrepo/mychart:2.7.0
+helm chart push localhost:5000/myrepo/mychart:2.7.0
+helm chart remove localhost:5000/myrepo/mychart:2.7.0
+helm chart pull localhost:5000/myrepo/mychart:2.7.0
+```
 
 ## Reference
 

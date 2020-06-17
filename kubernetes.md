@@ -1,5 +1,8 @@
 # Kubernetes
 
+- terraform + libvirt over ssh https://github.com/dmacvicar/terraform-provider-libvirt refer kubeone
+- kustomize
+
 <!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=4 orderedList=false} -->
 
 <!-- code_chunk_output -->

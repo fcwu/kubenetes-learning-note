@@ -1,0 +1,47 @@
+# go to VM
+# root@master:~# cat /usr/local/bin/loopmount
+# #!/bin/bash
+
+# # Usage: sudo loopmount file size mount-point
+
+# touch $1
+# truncate -s $2 $1
+# mke2fs -t ext4 -F $1 1> /dev/null 2> /dev/null
+# if [[ ! -d $3 ]]; then
+#         echo $3 " not exist, creating..."
+#         mkdir $3
+# fi
+# mount $1 $3
+# df -h |grep $3
+# root@master:~# chmod +x /usr/local/bin/loopmount
+# root@master:~# loopmount mytest 6G /mnt/local-volume/mytest
+# root@master:~# loopmount mytest 6G /mnt/local-volume/mytest
+# /mnt/local-volume/mytest  not exist, creating...
+# /dev/loop4                                           5.9G   24M  5.6G   1% /mnt/local-volume/mytest
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myclaim3
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+  storageClassName: local-volume
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: mypod3
+spec:
+  containers:
+    - name: myfrontend
+      image: nginx
+      volumeMounts:
+      - mountPath: "/usr/share/nginx/html"
+        name: mypd
+  volumes:
+    - name: mypd
+      persistentVolumeClaim:
+        claimName: myclaim3
