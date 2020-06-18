@@ -1,0 +1,6 @@
+*.log
+
+.vagrant
+vagrant-virtualbox/id_rsa.pub
+vagrant-virtualbox/index.html
+vagrant-virtualbox/join.sh
