@@ -1,8 +1,5 @@
 # Kubernetes
 
-- terraform + libvirt over ssh https://github.com/dmacvicar/terraform-provider-libvirt refer kubeone
-- https://github.com/kubernetes-sigs/kubespray
-
 <!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=4 orderedList=false} -->
 
 <!-- code_chunk_output -->
@@ -21,6 +18,7 @@
     - [Manage Resource](#manage-resource)
     - [Pod Overhead](#pod-overhead)
     - [Pod Priority and Preemption](#pod-priority-and-preemption)
+  - [Kustomize](#kustomize)
 - [Network](#network)
   - [DNS](#dns)
   - [Service: Access from external cluster](#service-access-from-external-cluster)
@@ -40,23 +38,10 @@
 - [Security](#security)
 - [Management](#management)
 - [Tools](#tools)
+  - [kubectl Plugins](#kubectl-plugins)
 - [Reference](#reference)
 
 <!-- /code_chunk_output -->
-
-- [ ] setup k8s via libvird over ssh with 3 master
-- [ ] Interface
-  - [ ] CRI
-  - [ ] CNI
-- [ ] use curl to access k8s apiserver
-- [ ] write go code to access k8s apiserver
-- [ ] helm
-- [ ] k8s scheduler
-- [ ] kustomize
-- [ ] annotation
-- [ ] node affinity
-- [ ] apply or create https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects, https://kubernetes.cn/docs/tasks/manage-kubernetes-objects/imperative-config/#how-to-delete-objects
-- [ ] k3s
 
 ```bash
 $ k run nginx --image=nginx --port=80
@@ -82,22 +67,12 @@ $ k get events -w
 
 ## Runtime
 
-- [ ] CRD
-- [ ] HorizentalPodAutoScale (hpa)
-- [ ] Nodes (no)
-- [ ] Pods (po)
-- [ ] PodPreset
-- [ ] PodTemplates
-- [ ] ProdSecurityPolicies (psp)
-- [ ] ResourceQuotas (quotas)
-- [ ] PodDisruptionBudge (pdb)
-- [ ] ReplicaionController (rc)
-- [ ] ReplicaSets (rs)
+- workload controller
+- configuration
 
 ### Workloads Controllers
 
 - origin: https://www.cnblogs.com/boshen-hzb/p/7097811.html
-- TODO: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 
 ```bash
 $ k create -f nginx.yaml
@@ -351,9 +326,6 @@ kustomize build stage | k applay -f
 
 ## Network
 
-- [ ] NetworkPolicies (netpol)
-- [ ] Endpoints (dp)
-
 Reference
 
 - https://www.hwchiu.com/cni.html
@@ -573,13 +545,14 @@ https://www.hwchiu.com/tags/CSI/
 
 ## Security
 
-- [ ] ClusterRoleBindings
-- [ ] ClusterRole
-- [ ] LimitRanges (limits)
-- [ ] Namespaces (ns)
-- [ ] RoleBindings
-- [ ] Roles
-- [ ] ServiceAccount (sa)
+- ClusterRoleBindings
+- ClusterRole
+- RoleBindings
+- Roles
+- ServiceAccount (sa)
+- Namespaces (ns)
+- LimitRanges (limits)
+- ResourceQuota
 
 ```bash
 $ k api-resources
@@ -648,12 +621,12 @@ volumeattachments                              storage.k8s.io                 fa
 ## Tools
 
 - tui: k9s
-- gui: https://github.com/vmware-tanzu/octant
+- gui: https://github.com/lensapp/lens
 - ELK
 - Prometheus Grafana
 - [Kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)
 
-**kubectl Plugins**
+### kubectl Plugins
 
 - management: https://github.com/kubernetes-sigs/krew
 - introduction: https://zhuanlan.zhihu.com/p/95664681

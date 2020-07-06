@@ -1,5 +1,27 @@
 # Install and Configuration
 
+
+<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+  - [create new token](#create-new-token)
+  - [taint](#taint)
+  - [app](#app)
+- [K8s Arch](#k8s-arch)
+  - [Node](#node)
+  - [resource limit by namespace](#resource-limit-by-namespace)
+  - [scale](#scale)
+- [API and Access](#api-and-access)
+  - [annotation](#annotation)
+  - [pod](#pod)
+- [API Objects](#api-objects)
+  - [StatefulSet](#statefulset)
+- [Official Document v1.18](#official-document-v118)
+
+<!-- /code_chunk_output -->
+
+
 https://cloud.google.com/kubernetes-engine/docs/quickstart
 
 Run kubeadm init on the head node.
@@ -126,19 +148,24 @@ spec:
     type: Container
 ```
 
-    kubectl apply -f https://k8s.io/examples/admin/resource/memory-defaults.yaml --namespace=default-mem-example
+```
+kubectl apply -f https://k8s.io/examples/admin/resource/memory-defaults.yaml --namespace=default-mem-example
+```
 
 ### scale
 
+```
   student@lfs458-node-1a0a: ̃$ kubectl scale deployment maint --replicas=20
   student@lfs458-node-1a0a: ̃$ kubectl drain lfs458-worker
   student@lfs458-node-1a0a: ̃$ kubectl describe node |grep -i taint
   student@lfs458-node-1a0a: ̃$ kubectl drain lfs458-worker --ignore-daemonsets
   student@lfs458-node-1a0a: ̃$ kubectl drain lfs458-worker --ignore-daemonsets --delete-local-data
   student@lfs458-node-1a0a: ̃$ kubectl uncordon lfs458-worker
+```
 
 ## API and Access
 
+```
   curl https://10.144.48.106:6443/api/v1/namespaces/bob/pods --cacert k8s-ca.crt --cert bob-k8s-access.crt --key bob-k8s.key
   kubectl auth can-i create deployments
   kubectl auth can-i create deployments --as bob
@@ -149,15 +176,19 @@ spec:
   no
   > k auth reconcile -f ../workload/job.yaml -n default --kubeconfig bob-k8s-config
   > k get pod etcd-master -o go-template='{{range $k, $v := .metadata.annotations}}{{printf "%v: %v\n" $k $v }}{{end}}'
+```
 
 ### annotation
 
+```
 $ kubectl annotate pods --all description='Production Pods' -n prod 
 $ kubectl annotate --overwrite pods description="Old Production Pods" -n prod 
 $ kubectl annotate pods foo description- -n prod
+```
 
 ### pod
 
+```
 > k run mypod --image=busybox --dry-run=client --port=80 -o yaml
 apiVersion: v1
 kind: Pod
@@ -194,6 +225,7 @@ k config view --minify --raw -o jsonpath='{.users[0].user.client-key-data}' | ba
       "kind": "Namespace",
       "kind": "Namespace",
       "kind": "Node",
+```
 
 ## API Objects
 
