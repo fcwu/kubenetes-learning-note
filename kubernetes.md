@@ -1,6 +1,7 @@
 # Kubernetes
 
 - terraform + libvirt over ssh https://github.com/dmacvicar/terraform-provider-libvirt refer kubeone
+- https://github.com/kubernetes-sigs/kubespray
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=4 orderedList=false} -->
 
@@ -340,9 +341,13 @@ Pod Overhead is a feature for accounting for the resources consumed by the Pod i
 
 https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
 
-### Reference
+### Kustomize
 
 - Kustomize example: [kustomize](./kustomize)
+
+```bash
+kustomize build stage | k applay -f
+```
 
 ## Network
 
@@ -670,6 +675,9 @@ ns                 v0.7.1
 resource-capacity  v0.4.0
 tail               v0.10.1
 view-allocations   v0.7.2
+debug
+sniff
+example
 ```
 
 ## Reference
