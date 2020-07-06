@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: secret-reader
+subjects:
+- kind: ServiceAccount   <=== 指定為 jenkins 底下的 default
+  name: default
+  namespace: jenkins
+roleRef:
+  kind: ClusterRole      <=== 綁定 ClusterRole
+  name: secret-reader
+  apiGroup: rbac.authorization.k8s.io
+
+# subjects:
+# - kind: User   <=== 指定對象為 User
+#   name: "james@example.com"   <=== User 名稱
+#   apiGroup: rbac.authorization.k8s.io
+# subjects:
+# - kind: Group   <=== 指定對象為 Group
+#   name: "frontend-admins"   <=== Group 名稱
+#   apiGroup: rbac.authorization.k8s.io
