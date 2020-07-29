@@ -1,15 +1,17 @@
 # k8s-vagrant-virtualbox
+
 Create a local kubernetes cluster using virtualbox.  A modification of the great work [danielepolencic](https://github.com/danielepolencic) did in his [gist](https://gist.github.com/danielepolencic/ef4ddb763fd9a18bf2f1eaaa2e337544).
 
 The vagrant file will do the following:
-1.  Provision all local VMs using VirtualBox
-2.  Patch the OS
-3.  Install Docker
-4.  Install k8s control plane
-5.  Initialize cluster with Flannel CIDR block & install Flannel
-6.  Join the nodes to the master
-7.  Create and copy the SSH key to all machines so you can SSH to any node from the Master.  Add names & IPs to the local hosts file on each master and node.  Create alias in vagrant home for kubectl...just use k
-8.  Make required Ubuntu OS mods for the cluster to function properly
+
+1. Provision all local VMs using VirtualBox
+2. Patch the OS
+3. Install Docker
+4. Install k8s control plane
+5. Initialize cluster with Flannel CIDR block & install Flannel
+6. Join the nodes to the master
+7. Create and copy the SSH key to all machines so you can SSH to any node from the Master.  Add names & IPs to the local hosts file on each master and node.  Create alias in vagrant home for kubectl...just use k
+8. Make required Ubuntu OS mods for the cluster to function properly
 
 ## Dependencies
 
@@ -75,4 +77,12 @@ SSH to other Nodes in the cluster from the Master:
 $ ssh node1
 $ ssh node2
 $ ssh node3
+```
+
+## enable libvirt
+
+```shell
+https://vagrantcloud.com/generic/boxes/ubuntu1804/versions/3.0.10/providers/libvirt.box
+vagrant box add generic/ubuntu1804 --provider libvirt
+ls -l ~/.vagrant.d/boxes/generic-VAGRANTSLASH-ubuntu1804/3.0.10/libvirt/
 ```

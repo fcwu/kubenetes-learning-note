@@ -1,0 +1,14 @@
+---
+- hosts: drbd_nodes
+  vars:
+    etc_hosts_add_all_hosts: true
+    pri_domain_name: test.vagrant.local
+    drbd_group: drbd_nodes
+    drbd_interface: ens4
+    drbd_network_shared_secret: wXE8MqVa
+    drbd_vip: 10.144.48.103
+  roles:
+    - role: apt-update
+    - role: ansible-ntp
+    - role: ansible-etc-hosts
+    - role: ansible-drbd
