@@ -92,7 +92,6 @@ resource "libvirt_volume" "drbd" {
   count = var.instance.count
 
   name           = "drbd-${count.index + var.instance.offset}.qcow2"
-  base_volume_id = libvirt_volume.ubuntu1804.id
   size           = 1024 * 1024 *1024 * 40
 }
 

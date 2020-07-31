@@ -1,0 +1,27 @@
+# {{ ansible_managed }}
+global {
+	usage-count no;
+}
+
+common {
+{% for section in drbd_common.keys() %}
+  {{ section }} {
+{%   for line in drbd_common[section].splitlines() %}
+    {{ line }}
+{%   endfor %}
+  }
+{% endfor %}
+}
+
+{% for disk in drbd_disks %}
+resource {{ disk['resource'] }} {
+{%   for host in groups[drbd_group] %}
+  on {{ hostvars[host]['inventory_hostname_short'] }} {
+    device {{ disk['device'] }};
+    disk {{ disk['use_partition'] }};
+    address {{ hostvars[host]['ansible_' + drbd_interface]['ipv4']['address'] }}:7788;
+    meta-disk internal;
+  }
+{%   endfor %}
+}
+{% endfor %}

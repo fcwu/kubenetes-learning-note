@@ -1,4 +1,9 @@
 ---
+- name: debian | hostname
+  become: true
+  hostname:
+    name: "{{ inventory_hostname }}"
+
 # tasks file for ansible-ntp
 - include_tasks: debian.yml
   when: ansible_os_family == "Debian"
