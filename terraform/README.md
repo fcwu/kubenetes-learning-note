@@ -7,6 +7,9 @@
 
 - [Setup libvirt via SSH](#setup-libvirt-via-ssh)
 - [Setup DRBD](#setup-drbd)
+- [K3S master nodes](#k3s-master-nodes)
+- [K3S workers](#k3s-workers)
+- [Replace nodes with RPi 4](#replace-nodes-with-rpi-4)
 - [Reference](#reference)
 
 <!-- /code_chunk_output -->
@@ -122,26 +125,26 @@ Before starting the cre
     - ansible-ntp is already installed, skipping.
     - ansible-drbd is already installed, skipping.
     > ansible-playbook playbook.yml
-
+    .
     PLAY [drbd_nodes] *******************************************************************************
-
+    .
     TASK [Gathering Facts] *******************************************************************************
     ok: [drbd1]
     ok: [drbd2]
-
+    .
     TASK [apt-update : debian | hostname] *******************************************************************************
     changed: [drbd2]
     changed: [drbd1]
-
+    .
     TASK [apt-update : include_tasks] *******************************************************************************
     included: /home/u/workspace/kube/terraform/roles/apt-update/tasks/debian.yml for drbd1, drbd2
-
+    .
     TASK [apt-update : debian | updating packages] *******************************************************************************
     ...
     RUNNING HANDLER [ansible-drbd : restart heartbeat] *******************************************************************************
     changed: [drbd1]
     changed: [drbd2]
-
+    .
     PLAY RECAP *******************************************************************************
     drbd1                      : ok=37   changed=24   unreachable=0    failed=0    skipped=5    rescued=0    ignored=0
     drbd2                      : ok=33   changed=20   unreachable=0    failed=0    skipped=9    rescued=0    ignored=0
@@ -180,6 +183,35 @@ Before starting the cre
     > terraform destroy -auto-approve
     </code></pre>
     </detail>
+
+## K3S master nodes
+
+TODO
+
+1. prometheus
+2. nfs server csi
+3. harbor
+4. possible to install worker
+5. master ha
+
+## K3S workers
+
+TODO
+
+1. without internet connective
+2. gpu
+
+## Replace nodes with RPi 4
+
+TODO
+
+master nodes
+
+1. usb to m.2
+2. usb to ethernet
+
+switch
+
 
 ## Reference
 
