@@ -1,11 +1,62 @@
 # terraform
 
+
+<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [Setup libvirt via SSH](#setup-libvirt-via-ssh)
+- [Setup DRBD](#setup-drbd)
+- [Reference](#reference)
+
+<!-- /code_chunk_output -->
+
+
 ![enter image description here](./assets/objective.drawio.svg)
+
+## Setup libvirt via SSH
+
+```bash
+/etc/libvirt/qemu.conf
+security_driver = "none"
+```
+
+Install terraform, terrafrom_libvirt
+
+```
+terraform init
+terraform plan
+terraform apply
+terraform show
+terraform destroy
+
+terraform -var=libvirt_uri=qemu+ssh://u@host1/system -var=node_number=17 apply
+terraform -var=uri=qemu+ssh://u@host1/system -var=node=18 apply
+terraform -var=uri=qemu+ssh://u@host2:2200/system -var=node=33 apply
+```
+
+```
+virsh
+virsh list --all
+virsh undefined ubuntu-terraform3
+virsh net-dhcp-leases default
+virsh net-define ./virsh5.xml
+virsh net-list -a
+virsh net-autostart k8s
+virsh net-start k8s
+virsh net-dumpxml k8s
+```
 
 ## Setup DRBD
 
+In this section, we will create two nodes DRBD by libvirt. The architecture likes region-c. We first configure IP address, create nodes via terraform, and setup DRBD via ansible. After completion, DRBD is mounted at `/opt/nfs`. You may try to shutdown one of machine to verify viability.
+
+Before starting the cre
+
 1. Update IP address in `region-drbd/terraform.tfvars.json` and `inventory`
+   
 2. Create nodes   
+   
     <details>
     <summary>terraform apply -auto-approve</summary>
     <pre class="language-shell"><code>
@@ -66,23 +117,34 @@
     <details>
     <summary>ansible-playbook playbook.yml</summary>
     <pre class="language-shell"><code>
+    > ansible-galaxy install -r requirements.yml
+    - ansible-etc-hosts is already installed, skipping.
+    - ansible-ntp is already installed, skipping.
+    - ansible-drbd is already installed, skipping.
     > ansible-playbook playbook.yml
 
-    PLAY [drbd_nodes] **********************************************************************************************************************************************************************************************************************
+    PLAY [drbd_nodes] *******************************************************************************
 
-    TASK [Gathering Facts] *****************************************************************************************************************************************************************************************************************
+    TASK [Gathering Facts] *******************************************************************************
     ok: [drbd1]
     ok: [drbd2]
 
-    TASK [apt-update : debian | hostname] **************************************************************************************************************************************************************************************************
+    TASK [apt-update : debian | hostname] *******************************************************************************
     changed: [drbd2]
     changed: [drbd1]
 
-    TASK [apt-update : include_tasks] ******************************************************************************************************************************************************************************************************
+    TASK [apt-update : include_tasks] *******************************************************************************
     included: /home/u/workspace/kube/terraform/roles/apt-update/tasks/debian.yml for drbd1, drbd2
 
-    TASK [apt-update : debian | updating packages] *****************************************************************************************************************************************************************************************
+    TASK [apt-update : debian | updating packages] *******************************************************************************
     ...
+    RUNNING HANDLER [ansible-drbd : restart heartbeat] *******************************************************************************
+    changed: [drbd1]
+    changed: [drbd2]
+
+    PLAY RECAP *******************************************************************************
+    drbd1                      : ok=37   changed=24   unreachable=0    failed=0    skipped=5    rescued=0    ignored=0
+    drbd2                      : ok=33   changed=20   unreachable=0    failed=0    skipped=9    rescued=0    ignored=0
     </code></pre>
     </detail>
 
@@ -94,17 +156,15 @@
     > virsh -c qemu+ssh://127.0.0.1/system console node-104
     Connected to domain node-104
     Escape character is ^]
-
     Ubuntu 18.04.4 LTS drbd1 ttyS0
-
     drbd1 login: ubuntu
     Password:
     Last login: Fri Jul 31 17:57:53 UTC 2020 from 10.144.48.106 on pts/0
     Welcome to Ubuntu 18.04.4 LTS (GNU/Linux 4.15.0-112-generic x86_64)
-
     ubuntu@drbd1:~$ ls /opt/nfs
     ubuntu@drbd1:~$ touch /opt/nfs/a
     ubuntu@drbd1:~$ sudo drbd-overview
+     0:r0/0  Connected Primary/Secondary UpToDate/UpToDate /opt/nfs ext4 40G 49M 38G 1%
     ubuntu@drbd1:~$ sudo shutdown now
     > virsh -c qemu+ssh://127.0.0.1/system console node-105
     ubuntu@drbd2:~$ ls /opt/nfs
@@ -121,3 +181,9 @@
     </code></pre>
     </detail>
 
+## Reference
+
+- 基本 virsh 使用: https://linuxconfig.org/how-to-create-and-manage-kvm-virtual-machines-from-cli#h9-create-the-new-virtual-machine
+- How To Provision VMs on KVM (libvirtd) with Terraform: https://computingforgeeks.com/how-to-provision-vms-on-kvm-with-terraform/
+- Configuring a libvirt domain with a static IP address via cloud-init local datasource: https://gist.github.com/cjihrig/a0f0e3c058b4d9dcf9ca1f771916fa28
+- [Terraform] 入門學習筆記: https://godleon.github.io/blog/DevOps/terraform-getting-started/
