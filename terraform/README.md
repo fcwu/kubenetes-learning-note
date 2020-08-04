@@ -54,7 +54,7 @@ virsh net-dumpxml k8s
 
 In this section, we will create two nodes DRBD by libvirt. The architecture likes region-c. We first configure IP address, create nodes via terraform, and setup DRBD via ansible. After completion, DRBD is mounted at `/opt/nfs`. You may try to shutdown one of machine to verify viability.
 
-Before starting the cre
+![enter image description here](./assets/drbd.drawio.svg)
 
 1. Update IP address in `region-drbd/terraform.tfvars.json` and `inventory`
    
@@ -126,9 +126,9 @@ Before starting the cre
     - ansible-drbd is already installed, skipping.
     > ansible-playbook playbook.yml
     .
-    PLAY [drbd_nodes] *******************************************************************************
+    PLAY [drbd_nodes] *************************************************************
     .
-    TASK [Gathering Facts] *******************************************************************************
+    TASK [Gathering Facts] ********************************************************
     ok: [drbd1]
     ok: [drbd2]
     .
@@ -145,7 +145,7 @@ Before starting the cre
     changed: [drbd1]
     changed: [drbd2]
     .
-    PLAY RECAP *******************************************************************************
+    PLAY RECAP ********************************************************************
     drbd1                      : ok=37   changed=24   unreachable=0    failed=0    skipped=5    rescued=0    ignored=0
     drbd2                      : ok=33   changed=20   unreachable=0    failed=0    skipped=9    rescued=0    ignored=0
     </code></pre>
@@ -184,6 +184,8 @@ Before starting the cre
     </code></pre>
     </detail>
 
+## K3S release server
+
 ## K3S master nodes
 
 TODO
@@ -191,7 +193,7 @@ TODO
 1. prometheus
 2. nfs server csi
 3. harbor
-4. possible to install worker
+4. possible to add/remove worker
 5. master ha
 
 ## K3S workers
@@ -219,3 +221,8 @@ switch
 - How To Provision VMs on KVM (libvirtd) with Terraform: https://computingforgeeks.com/how-to-provision-vms-on-kvm-with-terraform/
 - Configuring a libvirt domain with a static IP address via cloud-init local datasource: https://gist.github.com/cjihrig/a0f0e3c058b4d9dcf9ca1f771916fa28
 - [Terraform] 入門學習筆記: https://godleon.github.io/blog/DevOps/terraform-getting-started/
+
+
+ubuntu@drbd1:~$ sudo cat /opt/nfs/rancher/server/node-token
+K10c7c07ceb01342f9699691f9de0de4bdf0d8f85ff24f30b276e3e47dd556c0a34::server:cd84a203ab3c4de57ee5683d8b85b7a2
+curl -sfL https://get.k3s.io | K3S_URL=https://10.144.48.103:6443 K3S_TOKEN=K10c7c07ceb01342f9699691f9de0de4bdf0d8f85ff24f30b276e3e47dd556c0a34::server:cd84a203ab3c4de57ee5683d8b85b7a2 sh -

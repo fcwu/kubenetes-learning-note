@@ -5,10 +5,14 @@
     pri_domain_name: test.vagrant.local
     drbd_group: drbd_nodes
     drbd_interface: ens4
-    drbd_network_shared_secret: wXE8MqVa
+    drbd_network_shared_secret: _DRBD_SHARED_SECRET_
     drbd_vip: 10.144.48.103
+    mysql_datadir: /opt/nfs/system/mysql
+    mysql_k3s_password: _MYSQL_K3S_PASSWORD_
   roles:
     - role: apt-update
     - role: ansible-ntp
     - role: ansible-etc-hosts
     - role: ansible-drbd
+    - role: mysql-heartbeat
+    - role: k3s-master

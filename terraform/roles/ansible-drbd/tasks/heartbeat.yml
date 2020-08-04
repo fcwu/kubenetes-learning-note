@@ -16,7 +16,7 @@
   debug:
     msg: "{{ inventory_hostname}}, {{ groups[drbd_group][0] }}, {{ drbd_group }}"
 
-- name: heartbeat | Setting Heartbeat Authkey On Master
+- name: heartbeat | Setting Heartbeat Authkey On Master A
   set_fact:
     drbd_heartbeat_authkey: "{{ _drbd_heartbeat_authkey['stdout'] }}"
   no_log: false
@@ -24,7 +24,7 @@
         not _drbd_heartbeat_authkey_check['stat']['exists'] and
         inventory_hostname == groups[drbd_group][0]
 
-- name: heartbeat | Setting Heartbeat Authkey On Master
+- name: heartbeat | Setting Heartbeat Authkey On Master B
   set_fact:
     drbd_heartbeat_authkey: "{{ hostvars[groups[drbd_group][0]]['drbd_heartbeat_authkey'] }}"
   no_log: false

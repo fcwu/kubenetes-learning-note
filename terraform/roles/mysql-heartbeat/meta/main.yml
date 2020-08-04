@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   author: Doro Wu
-  description: Do apt update
+  description: Install heartbeat-managed MySQL
   license: MIT
   min_ansible_version: 2.8
   platforms:
@@ -12,7 +12,6 @@ galaxy_info:
         - trusty
         - xenial
   galaxy_tags:
-    - networking
     - system
 
 dependencies: []

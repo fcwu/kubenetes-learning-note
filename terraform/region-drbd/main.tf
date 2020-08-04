@@ -92,7 +92,7 @@ resource "libvirt_volume" "drbd" {
   count = var.instance.count
 
   name           = "drbd-${count.index + var.instance.offset}.qcow2"
-  size           = 1024 * 1024 *1024 * 40
+  size           = 1024 * 1024 *1024 * 10
 }
 
 resource "libvirt_cloudinit_disk" "commoninit" {
