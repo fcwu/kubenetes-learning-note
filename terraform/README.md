@@ -184,7 +184,7 @@ In this section, we will create two nodes DRBD by libvirt. The architecture like
     </code></pre>
     </detail>
 
-## K3S release server
+## Release server
 
 1. apt server
 2. k3s
