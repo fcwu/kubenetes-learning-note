@@ -6,57 +6,38 @@
   register: result
   until: result is successful
 
-- name: Stop secondary heartbeat
-  service:
-    name: heartbeat
-    state: stopped
+- name: Removing Heartbeat MySQL resource
+  shell: sed -i 's/ mysql//' /etc/ha.d/haresources
   become: true
-  when: >
-        inventory_hostname != groups[drbd_group][0]
 
-- name: Waiting primary node
-  command: drbd-overview
-  become: true
-  register: _drbd_sync
-  until: ('Primary/Secondary' in _drbd_sync['stdout'])
-  retries: 20
-  delay: 5
-  when: >
-        inventory_hostname == groups[drbd_group][0]        
+- name: Start Primary only
+  include_tasks: start_primary_only.yml
 
-# TODO restore default config
-# TODO restore default heartbeat haresource
-# TODO add mysql client cnf
-- name: Start mysql
-  service:
-    name: mysql
-    state: started
-  become: true
+- name: Remove {{ mysql_datadir }}
+  file:
+    path: "{{ mysql_datadir }}"
+    state: absent
   when: >
-        inventory_hostname == groups[drbd_group][0]        
+    mysql_clean
 
-- name: Creating K3S user
-  shell: |
-    mysql -u root -f <<EOF
-    DROP DATABASE IF EXISTS k3s;
-    REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'k3s'@'%';
-    DROP USER IF EXISTS 'k3s'@'%';
-    CREATE DATABASE k3s;
-    CREATE USER 'k3s'@'%' IDENTIFIED WITH mysql_native_password BY '{{ mysql_k3s_password }}';
-    GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, INDEX, DROP, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES ON k3s.* TO 'k3s'@'%';
-    EOF
-  become: true
+- name: Querying mysqld changed
+  command: grep -q {{ mysql_datadir }} /etc/mysql/mysql.conf.d/mysqld.cnf
+  register: _mysql_mysqld_cnf_status
   when: >
     inventory_hostname == groups[drbd_group][0]
 
-- name: Stop and disable mysql
-  service:
-    name: mysql
-    state: stopped
-    enabled: no
-  become: true
+- include_tasks: user.yml
+  when: >
+    inventory_hostname == groups[drbd_group][0] and _mysql_mysqld_cnf_status.rc != 0
 
-- name: Moving directory
+- name: Querying {{ mysql_datadir }} stat
+  stat:
+    path: "{{ mysql_datadir }}"
+  register: _mysql_datadir_stat
+  when: >
+    inventory_hostname == groups[drbd_group][0]
+  
+- name: Copying {{ mysql_datadir }}
   shell: |
     mkdir -p {{ mysql_datadir }}
     chown -R mysql:mysql {{ mysql_datadir }}
@@ -64,22 +45,9 @@
     cp -ar /var/lib/mysql/* {{ mysql_datadir }}/
   become: true
   when: >
-    inventory_hostname == groups[drbd_group][0]
+    inventory_hostname == groups[drbd_group][0] and not _mysql_datadir_stat['stat']['exists']
 
-- name: Configuring AppArmor
-  template:
-    src: etc/apparmor.d/tunables/alias.j2
-    dest: /etc/apparmor.d/tunables/alias
-    owner: root
-    group: root
-    mode: "u=rw,g=r,o=r"
-  become: true
-
-- name: Restart AppArmor
-  service:
-    name: apparmor
-    state: restarted
-  become: true  
+- include_tasks: apparmor.yml
 
 - name: Configuring MySQL
   template:
@@ -90,7 +58,7 @@
     mode: "u=rw,g=r,o=r"
   become: true
 
-- name: Configuring Heartbeat script
+- name: Adding Heartbeat MySQL script
   template:
     src: etc/ha.d/resource.d/mysql
     dest: /etc/ha.d/resource.d/mysql
@@ -99,12 +67,17 @@
     mode: "u=rwx,g=rx,o=rx"
   become: true
 
-- name: Configuring Heartbeat resource
+- name: Configuring Heartbeat MySQL resource
   shell: grep -q mysql /etc/ha.d/haresources || sed -i 's/drbddisk.*/& mysql/' /etc/ha.d/haresources
   become: true
 
-- name: Restart heartbeat
+- name: Start Primary only
+  include_tasks: start_primary_only.yml
+
+- name: Start secondary heartbeat
   service:
     name: heartbeat
-    state: restarted
+    state: started
   become: true
+  when: >
+    inventory_hostname != groups[drbd_group][0]

@@ -1,0 +1,24 @@
+---
+- name: Restart heartbeat
+  service:
+    name: heartbeat
+    state: restarted
+  become: true
+
+- name: Stop secondary heartbeat
+  service:
+    name: heartbeat
+    state: stopped
+  become: true
+  when: >
+    inventory_hostname != groups[drbd_group][0]
+
+- name: Waiting primary node
+  command: drbd-overview
+  become: true
+  register: _drbd_sync
+  until: ('Primary/Secondary' in _drbd_sync['stdout'])
+  retries: 20
+  delay: 5
+  when: >
+    inventory_hostname == groups[drbd_group][0]

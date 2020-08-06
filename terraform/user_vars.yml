@@ -1,0 +1,10 @@
+---
+etc_hosts_add_all_hosts: true
+pri_domain_name: test.vagrant.local
+drbd_group: drbd_nodes
+drbd_interface: ens4
+drbd_network_shared_secret: _DRBD_SHARED_SECRET_
+drbd_vip: 10.144.48.103
+mysql_datadir: /opt/nfs/system/mysql
+mysql_k3s_password: _MYSQL_K3S_PASSWORD_
+mysql_clean: true

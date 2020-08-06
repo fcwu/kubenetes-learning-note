@@ -510,6 +510,8 @@ Examples:
 
 NFS server could not start normally in container, because [it's required special parameters to mount overlayfs](https://serverfault.com/questions/949892/nfs-export-an-overlay-of-ext4-and-btrfs). [NFS-Client](https://www.hwchiu.com/kubernetes-storage-ii.html) is better solution.
 
+http://linux.vbird.org/linux_enterprise/kerberos.php
+
 In every nodes,
 
 ```bash

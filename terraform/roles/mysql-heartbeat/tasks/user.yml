@@ -1,0 +1,25 @@
+---
+- name: Start mysql
+  service:
+    name: mysql
+    state: started
+  become: true
+
+- name: Creating K3S user
+  shell: |
+    mysql -u root -f <<EOF
+    DROP DATABASE IF EXISTS k3s;
+    REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'k3s'@'%';
+    DROP USER IF EXISTS 'k3s'@'%';
+    CREATE DATABASE k3s;
+    CREATE USER 'k3s'@'%' IDENTIFIED WITH mysql_native_password BY '{{ mysql_k3s_password }}';
+    GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, INDEX, DROP, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES ON k3s.* TO 'k3s'@'%';
+    EOF
+  become: true
+
+- name: Stop and disable mysql
+  service:
+    name: mysql
+    state: stopped
+    enabled: no
+  become: true

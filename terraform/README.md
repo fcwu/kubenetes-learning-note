@@ -57,9 +57,9 @@ In this section, we will create two nodes DRBD by libvirt. The architecture like
 ![enter image description here](./assets/drbd.drawio.svg)
 
 1. Update IP address in `region-drbd/terraform.tfvars.json` and `inventory`
-   
-2. Create nodes   
-   
+
+2. Create nodes
+
     <details>
     <summary>terraform apply -auto-approve</summary>
     <pre class="language-shell"><code>
@@ -116,7 +116,7 @@ In this section, we will create two nodes DRBD by libvirt. The architecture like
     </details>
 
 3. Setup DRBD
-   
+
     <details>
     <summary>ansible-playbook playbook.yml</summary>
     <pre class="language-shell"><code>
@@ -186,15 +186,22 @@ In this section, we will create two nodes DRBD by libvirt. The architecture like
 
 ## K3S release server
 
+1. apt server
+2. k3s
+3. container repo
+4. helm repo
+
 ## K3S master nodes
 
 TODO
 
-1. prometheus
-2. nfs server csi
-3. harbor
-4. possible to add/remove worker
-5. master ha
+1. nfs server csi
+3. prometheus
+4. harbor
+5. possible to add/remove worker
+6. master ha
+7. add master node, remove master node
+8. copy this to drbd, asdf, python
 
 ## K3S workers
 
@@ -203,7 +210,7 @@ TODO
 1. without internet connective
 2. gpu
 
-## Replace nodes with RPi 4
+## K3S workers by RPi 4
 
 TODO
 
@@ -211,9 +218,6 @@ master nodes
 
 1. usb to m.2
 2. usb to ethernet
-
-switch
-
 
 ## Reference
 
