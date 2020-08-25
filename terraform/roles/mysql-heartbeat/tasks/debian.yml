@@ -6,23 +6,36 @@
   register: result
   until: result is successful
 
-- name: Removing Heartbeat MySQL resource
-  shell: sed -i 's/ mysql//' /etc/ha.d/haresources
+- name: Stop heartbeat
+  service:
+    name: heartbeat
+    state: stopped
   become: true
 
-- name: Start Primary only
-  include_tasks: start_primary_only.yml
+- name: Promote to primary
+  command: drbdadm primary r0
+  become: true
+  when: >
+    inventory_hostname == groups[drbd_group][0]
+
+- name: Mount DRBD
+  command: mount -t ext4 /dev/drbd0 /opt/nfs
+  become: true
+  when: >
+    inventory_hostname == groups[drbd_group][0]
 
 - name: Remove {{ mysql_datadir }}
   file:
     path: "{{ mysql_datadir }}"
     state: absent
+  become: true
   when: >
     mysql_clean
 
 - name: Querying mysqld changed
   command: grep -q {{ mysql_datadir }} /etc/mysql/mysql.conf.d/mysqld.cnf
   register: _mysql_mysqld_cnf_status
+  ignore_errors: yes
   when: >
     inventory_hostname == groups[drbd_group][0]
 
@@ -36,7 +49,7 @@
   register: _mysql_datadir_stat
   when: >
     inventory_hostname == groups[drbd_group][0]
-  
+
 - name: Copying {{ mysql_datadir }}
   shell: |
     mkdir -p {{ mysql_datadir }}
@@ -71,13 +84,30 @@
   shell: grep -q mysql /etc/ha.d/haresources || sed -i 's/drbddisk.*/& mysql/' /etc/ha.d/haresources
   become: true
 
-- name: Start Primary only
-  include_tasks: start_primary_only.yml
+- name: Tear down
+  command: umount /opt/nfs
+  become: true
+  when: >
+    inventory_hostname == groups[drbd_group][0]
 
-- name: Start secondary heartbeat
+- name: Tear down
+  command: drbdadm secondary r0
+  become: true
+  when: >
+    inventory_hostname == groups[drbd_group][0]
+
+- name: Start heartbeat
   service:
     name: heartbeat
     state: started
   become: true
+
+- name: Waiting primary node
+  command: drbd-overview
+  become: true
+  register: _drbd_sync
+  until: ('Primary' in _drbd_sync['stdout'])
+  retries: 30
+  delay: 5
   when: >
-    inventory_hostname != groups[drbd_group][0]
+    inventory_hostname == groups[drbd_group][0]

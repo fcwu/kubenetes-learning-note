@@ -64,7 +64,9 @@ resource "libvirt_network" "drbdnet" {
   addresses = ["192.168.254.0/24"]
 
   # mode can be: "nat" (default), "none", "route", "bridge"
-  mode = "nat"
+  # mode = "nat"
+  mode = "bridge"
+  bridge = "br1"
 }
 
 resource "libvirt_pool" "ubuntu" {
@@ -121,7 +123,7 @@ data "template_file" "network_config" {
     ipv4_netmask = var.instance.ipv4_netmask
     gateway4 = var.instance.gateway4
     nameservers = var.instance.nameservers
-    ipv4_drbd_address = cidrhost("192.168.254.0/24", count.index + 1)
+    ipv4_drbd_address = cidrhost("192.168.5.0/24", count.index + 11)
     ipv4_drbd_netmask = "24"
   }
 }

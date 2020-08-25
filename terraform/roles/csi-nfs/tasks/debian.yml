@@ -1,0 +1,24 @@
+---
+- name: debian | install nfs-server nfs-common
+  apt:
+    name:
+      - nfs-server
+      - nfs-common
+  become: true
+  register: result
+  until: result is successful
+
+- name: Configuring NFS
+  template:
+    src: etc/exports.j2
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: "u=rw,g=r,o=r"
+  become: true
+
+- name: Restarting NFS server
+  service:
+    name: nfs-server
+    state: restarted
+  become: true
