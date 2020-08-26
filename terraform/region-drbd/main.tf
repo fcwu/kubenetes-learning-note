@@ -8,7 +8,7 @@ resource "libvirt_domain" "default" {
   name = "node-${count.index + var.instance.offset}"
   # cpu = <mode>
   vcpu = 2
-  memory = "2048"
+  memory = "4096"
   # running = false
   autostart = true
 

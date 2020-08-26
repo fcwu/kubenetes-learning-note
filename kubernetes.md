@@ -226,7 +226,7 @@ CronJob Spec
 
 Origin: https://kubernetes.io/docs/concepts/configuration/overview/
 
-Example: 
+Example:
 
 - [example configmap.yaml](./example/configmap.yaml)
 - [example/volume/config-map.yaml](example/volume/config-map.yaml)
@@ -410,7 +410,7 @@ Described in [Ingress](ingress.md)
 Factors of traffic distribution
 
 - A/B testing
-  - A/B testing (also sometimes referred to as split testing) is the practice of showing two variants of the same web page to different segments of website visitors at the same time and comparing which variant drives more conversions.  
+  - A/B testing (also sometimes referred to as split testing) is the practice of showing two variants of the same web page to different segments of website visitors at the same time and comparing which variant drives more conversions.
 - Blue/Green release
   - You can do a blue-green release if you've tested the new version in a testing environment and are very certain that the new version will function correctly in production. Always using feature toggles is a good way to increase your confidence in a new version, since the new version functions exactly like the old until someone flips a feature toggle.
 - Canary release
@@ -521,6 +521,7 @@ apt install -y nfs-common
 In NFS server,
 
 ```bash
+$ apt install -y nfs-server
 $ cat /etc/exports
 /home/u/nfs/nfs 10.144.48.106(rw,sync,no_subtree_check,insecure)
 $ chmod 777 /home/u/nfs/nfs

@@ -4,6 +4,7 @@ global {
 }
 
 common {
+  protocol A;
 {% for section in drbd_common.keys() %}
   {{ section }} {
 {%   for line in drbd_common[section].splitlines() %}

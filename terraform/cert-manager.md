@@ -6,7 +6,7 @@
     helm repo add jetstack https://charts.jetstack.io
     kubectl create namespace cert-manager
     helm repo update
-    helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v0.16.1 --set installCRDs=true
+    helm upgrade --install cert-manager1 jetstack/cert-manager --namespace cert-manager --version v0.16.1 --set installCRDs=true
     ```
 
 2. Generate root CA
@@ -39,42 +39,19 @@
 5. Verify ca-issuer corrctness
 
     ```shell
-    > k get issuers ca-issuer -n cert-manager
-    NAME        READY   AGE
-    ca-issuer   True    3m57s
-    > k get issuers -A
-    NAMESPACE      NAME        READY   AGE
-    cert-manager   ca-issuer   True    4m3s
-    ```
+    > k get clusterissuers ca-issuer -o wide
+    NAME        READY   STATUS                AGE
+    ca-issuer   True    Signing CA verified   46s
 
-6. Create a certificate for harbor where domain is `harbor.svc.joplin.mycluster`
-
-    ```shell
-    export NAME=harbor DOMAIN=harbor.svc.joplin.mycluster NAMESPACE=harbor
-    cat << EOF | k create -f -
-    apiVersion: cert-manager.io/v1alpha2
-    kind: Certificate
-    metadata:
-        name: ${NAME}-cert
-        namespace: ${NAMESPACE}
-    spec:
-        commonName: ${DOMAIN}
-        secretName: ${DOMAIN}-cert
-        issuerRef:
-            name: ca-issuer
-            kind: ClusterIssuer
-        dnsNames:
-        - ${DOMAIN}
-    EOF
-    ```
-
-7. Add root CA as trust CA
+6. Add root CA as trust CA
 
     ```shell
     sudo mkdir /usr/local/share/ca-certificates/k3s
-    sudo cp ca.crt /usr/local/share/ca-certificates/drbd-k3s/ca.crt
+    sudo cp ca.crt /usr/local/share/ca-certificates/k3s/ca.crt
     sudo update-ca-certificates
     ```
+
+[harbor.md] to create your first certificate.
 
 ## Reference
 

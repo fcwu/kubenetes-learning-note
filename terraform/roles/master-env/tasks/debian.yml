@@ -21,6 +21,7 @@
     src: dot.zshrc.j2
     dest: .zshrc
 
+# not work
 - name: Set default shell to zsh
   shell: usermod $USER -s /bin/zsh
   become: true
@@ -32,12 +33,22 @@
     path: "/etc/rancher/k3s/k3s.yaml"
   register: _k3s_stat
 
-- name: Set kubeconfig permission
+- name: Set global kubeconfig permission
   file:
     path: "/etc/rancher/k3s/k3s.yaml"
     owner: root
     group: "1000"
     mode: "0640"
+  become: true
+  when: _k3s_stat['stat']['exists']
+
+- name: Set kube folder permission
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0700"
+    state: directory
   become: true
   when: _k3s_stat['stat']['exists']
 
@@ -86,9 +97,11 @@
     warn: no
   register: _primary_node_status
   failed_when: _primary_node_status.rc != 0 and _primary_node_status.rc != 1
+  become: true
 
 - name: Synchronizing configurations
   synchronize:
     src: "{{ playbook_dir }}"
     dest: /opt/nfs/deploy
+  become: true
   when: _primary_node_status.rc == 0

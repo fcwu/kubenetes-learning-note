@@ -8,6 +8,13 @@
   register: result
   until: result is successful
 
+- name: Create data folder
+  file:
+    path: /opt/nfs/data
+    state: directory
+    mode: '1777'
+  become: true
+
 - name: Configuring NFS
   template:
     src: etc/exports.j2

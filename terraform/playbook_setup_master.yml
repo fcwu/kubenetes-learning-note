@@ -4,9 +4,16 @@
     - user_vars.yml
   roles:
     - role: apt-update
+      tags: ["base"]
     - role: ansible-ntp
+      tags: ["base"]
     - role: ansible-etc-hosts
+      tags: ["base"]
     - role: ansible-drbd
-    # - role: mysql-heartbeat
-    # - role: k3s-master
-    # - role: csi-nfs
+      tags: ["drbd"]
+    - role: mysql-heartbeat
+      tags: ["k3s", "datastore"]
+    - role: k3s-master
+      tags: ["k3s", "master"]
+    - role: csi-nfs
+      tags: ["k3s", "csi"]

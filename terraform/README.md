@@ -35,7 +35,6 @@
 
 1. Prepare Ubuntu 18.04. Install libvirt and SSH.
 
-
   ```bash
   /etc/libvirt/qemu.conf
   security_driver = "none"
@@ -216,21 +215,22 @@ K3S can run with SQLite and external database like MySQL and PostgreSQL. However
 
 TODO
 
+1. install iostat sysstat
 1. deploy nfs disable and stop
-2. add haresource for nfs start
+1. add haresource for nfs start
 
 ### K3S
 
-1. CSI
+1. Container Storage Interface of NFS
 
     <details>
-    <summary>terraform destroy -auto-approve</summary>
+    <summary>helm install nfs-client</summary>
     <pre class="language-shell"><code>
-    $ ansible-playbook playbook_env.yml -l drbd_nodes
+    $ ansible-playbook playbook_kubeconfig.yml -l drbd_nodes
     $ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
     $ helm install nfs-client stable/nfs-client-provisioner \
         --set nfs.server=192.168.5.10 \
-        --set nfs.path=/opt/nfs
+        --set nfs.path=/opt/nfs/data
     $ kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
     $ kubectl patch storageclass nfs-client -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
     $ k get sc
@@ -239,13 +239,51 @@ TODO
     storageclass.storage.k8s.io/nfs-client (default)   cluster.local/nfs-client-nfs-client-provisioner   Delete          Immediate              true                   5d21h
     </code></pre>
 
+    no start nfs in heartbeat
+
 2. Prometheus + Grafana
 
-    http://grafana.svc.joplin.mycluster/admin/grafana/
+    <details>
+    <summary>helm install stable/prometheus stable/grafana</summary>
+    <pre class="language-shell"><code>
+    $ helm upgrade --namespace monitoring --create-namespace --install prometheus-1 stable/prometheus \
+        --set server.global.scrape_interval=10s
+    $ k create secret generic grafana-admin \
+        --from-literal=admin-user=dorowu \
+        --from-literal=admin-password=dorowu \
+        --namespace monitoring
+    $ helm upgrade --install grafana stable/grafana \
+    --namespace monitoring \
+    --set persistence.enabled=true \
+    -f dashboards/provider.yaml \
+    --set-file dashboards.default.default.json=dashboards/kubernetes.json \
+    -f datasources/datasources.yaml \
+    --set admin.existingSecret=grafana-admin \
+    --set "grafana\.ini".server.domain=localhost \
+    --set-string "grafana\.ini".server.root_url="%(protocol)s://%(domain)s:%(http_port)s/admin/grafana/" \
+    --set "grafana\.ini".server.serve_from_sub_path=true
+    $ cat <<EOF | kubectl apply -f -
+    apiVersion: extensions/v1beta1
+    kind: Ingress
+    metadata:
+    name: grafana
+    annotations:
+        traefik.frontend.rule.type: PathPrefixStrip
+    spec:
+    rules:
+    - http:
+        paths:
+        - path: /admin/grafana
+            backend:
+            serviceName: grafana
+            servicePort: 80
+    EOF
+    </code></pre>
 
 3. Harbor
 
 4. maintainance
+
    - possible to add/remove worker
    - master ha
    - add master node, remove master node
@@ -279,3 +317,6 @@ master nodes
 ubuntu@drbd1:~$ sudo cat /opt/nfs/rancher/server/node-token
 K10c7c07ceb01342f9699691f9de0de4bdf0d8f85ff24f30b276e3e47dd556c0a34::server:cd84a203ab3c4de57ee5683d8b85b7a2
 curl -sfL https://get.k3s.io | K3S_URL=https://10.144.48.103:6443 K3S_TOKEN=K10c7c07ceb01342f9699691f9de0de4bdf0d8f85ff24f30b276e3e47dd556c0a34::server:cd84a203ab3c4de57ee5683d8b85b7a2 sh -
+
+ansible-playbook playbook_setup_master.yml --tags csi
+ansible-playbook playbook_setup_master.yml --tags csi --list-tasks
