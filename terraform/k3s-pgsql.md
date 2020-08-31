@@ -1,6 +1,6 @@
-
-
 ### PostgreSQL
+
+https://www.postgresql.org/download/linux/ubuntu/
 
 ```shell
 sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -11,7 +11,7 @@ sudo apt-get -y install postgresql
 pg_lsclusters
 pg_ctlcluster 12 main restart
 sudo -u postgres createuser --interactive
-createdb sammy
+create database sammy
 alter database k3s owner to k3s
 ALTER USER gtwang WITH PASSWORD 'new_password';
 ```

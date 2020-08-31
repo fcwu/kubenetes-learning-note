@@ -5,6 +5,6 @@
   register: _k3s_master_binary_status
 
 - name: Install K3S server
-  shell: curl -sfL https://get.k3s.io | sh -s - --datastore-endpoint="mysql://k3s:{{ mysql_k3s_password }}@tcp({{ drbd_vip_ingress }}:3306)/k3s"
+  shell: curl -sfL https://get.k3s.io | sh -s - --datastore-endpoint="postgres://k3s:k3s@{{ drbd_vip_ingress }}:5432/k3s"
   become: true
   when: not _k3s_master_binary_status['stat']['exists']

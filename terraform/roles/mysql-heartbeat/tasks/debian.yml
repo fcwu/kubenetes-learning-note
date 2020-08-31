@@ -35,7 +35,7 @@
 - name: Querying mysqld changed
   command: grep -q {{ mysql_datadir }} /etc/mysql/mysql.conf.d/mysqld.cnf
   register: _mysql_mysqld_cnf_status
-  ignore_errors: yes
+  failed_when: _mysql_mysqld_cnf_status.rc !=0 and _mysql_mysqld_cnf_status.rc != 1
   when: >
     inventory_hostname == groups[drbd_group][0]
 
@@ -84,13 +84,13 @@
   shell: grep -q mysql /etc/ha.d/haresources || sed -i 's/drbddisk.*/& mysql/' /etc/ha.d/haresources
   become: true
 
-- name: Tear down
+- name: Umount /opt/nfs
   command: umount /opt/nfs
   become: true
   when: >
     inventory_hostname == groups[drbd_group][0]
 
-- name: Tear down
+- name: Tear down DRBD
   command: drbdadm secondary r0
   become: true
   when: >

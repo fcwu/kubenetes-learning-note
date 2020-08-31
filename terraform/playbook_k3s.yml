@@ -11,9 +11,13 @@
       tags: ["base"]
     - role: ansible-drbd
       tags: ["drbd"]
-    - role: mysql-heartbeat
+    # - role: mysql-heartbeat
+    #   tags: ["k3s", "datastore"]
+    - role: pgsql-heartbeat
       tags: ["k3s", "datastore"]
     - role: k3s-master
       tags: ["k3s", "master"]
-    - role: csi-nfs
+    - role: master-env
+      tags: ["env"]
+    - role: csi-nfs-heartbeat
       tags: ["k3s", "csi"]

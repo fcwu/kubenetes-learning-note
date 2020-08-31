@@ -1,0 +1,57 @@
+---
+- hosts: drbd_nodes[0]
+  vars_files:
+    - user_vars.yml
+  tasks:
+    - name: Querying helm harbor repo
+      shell: helm repo list | grep -w harbor
+      failed_when: _repo.rc !=0 and _repo.rc != 1
+      register: _repo
+
+    - name: Adding harbor repo
+      command: helm repo add harbor https://helm.goharbor.io
+      when: _repo.rc != 0
+
+    - name: Querying harbor charts
+      shell: helm list -n harbor -o json  | jq -r '.[].name' | grep -w harbor1
+      failed_when: _helm.rc !=0 and _helm.rc != 1
+      register: _helm
+
+    - name: Adding harbor helm chart
+      command: >
+        helm upgrade --install harbor1 harbor/harbor
+            -n harbor --create-namespace
+            --set expose.tls.enabled=false
+            --set-string expose.ingress.annotations."ingress\.kubernetes\.io/ssl-redirect"=false
+            --set-string expose.ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"=false
+            --set externalURL=http://harbor.svc.joplin.mycluster
+            --set expose.ingress.hosts.core=harbor.svc.joplin.mycluster
+            --set expose.ingress.hosts.notary=notary.svc.joplin.mycluster
+            --set registry.relativeurls=true
+            --set clair.enabled=false
+            --set database.type=external
+            --set database.external.host=192.168.5.10
+            --set database.external.username=harbor
+            --set database.external.password=harbor
+      when: _helm.rc != 0
+
+    - name: Waiting ingress created
+      command: kubectl get ingress harbor1-harbor-ingress -n harbor
+      retries: 20
+      delay: 3
+      when: _helm.rc != 0
+
+    - name: Query ingress
+      shell: >
+        kubectl get ingress harbor1-harbor-ingress -n harbor -o json
+        | jq '.spec.tls[].secretName'
+        | grep -w harbor.svc.joplin.mycluster-cert
+      failed_when: _helm.rc !=0 and _helm.rc != 1
+      register: _ingress
+
+    - name: Adding ingress
+      shell: >
+        kubectl get ingress harbor1-harbor-ingress -n harbor -o json
+        | jq '.spec.tls[0]={"hosts":["harbor.svc.joplin.mycluster"],"secretName":"harbor.svc.joplin.mycluster-cert"}'
+        | kubectl apply -f -
+      when: _ingress.rc != 0

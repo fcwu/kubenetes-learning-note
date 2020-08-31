@@ -4,9 +4,7 @@
 
     ```shell
     helm repo add jetstack https://charts.jetstack.io
-    kubectl create namespace cert-manager
-    helm repo update
-    helm upgrade --install cert-manager1 jetstack/cert-manager --namespace cert-manager --version v0.16.1 --set installCRDs=true
+    helm upgrade --install cert-manager1 jetstack/cert-manager --namespace cert-manager --version v0.16.1 --set installCRDs=true --create-namespace
     ```
 
 2. Generate root CA

@@ -4,16 +4,20 @@
 
     ```shell
     helm repo add harbor https://helm.goharbor.io
-    k create ns harbor
     helm upgrade --install harbor1 harbor/harbor \
-        -n harbor \
+        -n harbor --create-namespace \
         --set expose.tls.enabled=false \
         --set-string expose.ingress.annotations."ingress\.kubernetes\.io/ssl-redirect"=false \
         --set-string expose.ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"=false \
         --set externalURL=http://harbor.svc.joplin.mycluster \
         --set expose.ingress.hosts.core=harbor.svc.joplin.mycluster \
         --set expose.ingress.hosts.notary=notary.svc.joplin.mycluster \
-        --set registry.relativeurls=true
+        --set registry.relativeurls=true \
+        --set clair.enabled=false \
+        --set database.type=external \
+        --set database.external.host=192.168.5.10 \
+        --set database.external.username=harbor \
+        --set database.external.password=harbor
     ```
 
 2. Create a certificate for harbor where domain is `harbor.svc.joplin.mycluster`
@@ -43,14 +47,16 @@
     > k get ingress harbor1-harbor-ingress -n harbor -o yaml
     ...
     spec:
-    rules:
+      rules:
         ...
-    tls:
-    - hosts:
-        - harbor.svc.joplin.mycluster
+      tls:
+      - hosts:
+          - harbor.svc.joplin.mycluster
         secretName: harbor.svc.joplin.mycluster-cert
     ...
     ```
+    k get ingress grafana -o json | jq '.spec.tls[0]={"host":["harbor.svc.joplin.mycluster"],"secretName":"harbor.svc.joplin.mycluster-cert"}'
+    jq '.spec.tls[].secretName'
 
 4. Import root CA certificate to docker client
 

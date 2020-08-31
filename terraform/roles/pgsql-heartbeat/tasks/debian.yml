@@ -1,0 +1,55 @@
+---
+- name: pgsql source list
+  copy:
+    dest: /etc/apt/sources.list.d/pgdg.list
+    content: deb http://apt.postgresql.org/pub/repos/apt bionic-pgdg main
+  become: true
+
+- name: pgsql apt key
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+  become: true
+
+- name: Installing pgsql
+  apt:
+    name: postgresql
+    update_cache: true
+  become: true
+  register: result
+  until: result is successful
+
+- name: Install prerequisites
+  apt:
+    name:
+      - libpq-dev
+      - python3-psycopg2
+  become: true
+
+- name: Stop heartbeat
+  service:
+    name: heartbeat
+    state: stopped
+  become: true
+
+- include_tasks: pgsql.yml
+  when: inventory_hostname == groups[drbd_group][0]
+
+- name: Adding pgsql to heartbeat management
+  shell: grep -q pgsql /etc/ha.d/haresources || sed -i 's/drbddisk.*/& pgsql/' /etc/ha.d/haresources
+  become: true
+
+- name: Start heartbeat
+  service:
+    name: heartbeat
+    state: started
+  become: true
+
+- name: Waiting primary node
+  command: drbd-overview
+  become: true
+  register: _drbd_sync
+  until: ('Primary' in _drbd_sync['stdout'])
+  retries: 30
+  delay: 5
+  when: inventory_hostname == groups[drbd_group][0]

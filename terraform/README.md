@@ -202,6 +202,13 @@ In this section, we will create two nodes DRBD by libvirt. The architecture like
 
 K3S can run with SQLite and external database like MySQL and PostgreSQL. However, K3S with MySQL as data store has poor performance on heavy IO operations. The load average generally is above 3 and somtimes above 10 on 2 core CPU with 6 GB RAM. PostgreSQL has a few improvement.
 
+FIXME: install k3s but not to start
+
+Buy
+
+- https://24h.pchome.com.tw/prod/DRAH6S-A900AD9T5
+- https://24h.pchome.com.tw/prod/DGBN4M-A900A4LAD?fq=/S/DGBN4M
+
 ## Service on master nodes
 
 1. K3S
@@ -215,7 +222,6 @@ K3S can run with SQLite and external database like MySQL and PostgreSQL. However
 
 TODO
 
-1. install iostat sysstat
 1. deploy nfs disable and stop
 1. add haresource for nfs start
 
@@ -228,6 +234,7 @@ TODO
     <pre class="language-shell"><code>
     $ ansible-playbook playbook_kubeconfig.yml -l drbd_nodes
     $ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+    $ export KUBECONFIG=${PWD}/kubeconfig-drbd
     $ helm install nfs-client stable/nfs-client-provisioner \
         --set nfs.server=192.168.5.10 \
         --set nfs.path=/opt/nfs/data
@@ -239,7 +246,7 @@ TODO
     storageclass.storage.k8s.io/nfs-client (default)   cluster.local/nfs-client-nfs-client-provisioner   Delete          Immediate              true                   5d21h
     </code></pre>
 
-    no start nfs in heartbeat
+    FIXME: no start nfs in heartbeat
 
 2. Prometheus + Grafana
 
@@ -249,19 +256,19 @@ TODO
     $ helm upgrade --namespace monitoring --create-namespace --install prometheus-1 stable/prometheus \
         --set server.global.scrape_interval=10s
     $ k create secret generic grafana-admin \
-        --from-literal=admin-user=dorowu \
-        --from-literal=admin-password=dorowu \
+        --from-literal=admin-user=admin \
+        --from-literal=admin-password=admin \
         --namespace monitoring
     $ helm upgrade --install grafana stable/grafana \
-    --namespace monitoring \
-    --set persistence.enabled=true \
-    -f dashboards/provider.yaml \
-    --set-file dashboards.default.default.json=dashboards/kubernetes.json \
-    -f datasources/datasources.yaml \
-    --set admin.existingSecret=grafana-admin \
-    --set "grafana\.ini".server.domain=localhost \
-    --set-string "grafana\.ini".server.root_url="%(protocol)s://%(domain)s:%(http_port)s/admin/grafana/" \
-    --set "grafana\.ini".server.serve_from_sub_path=true
+        --namespace monitoring \
+        --set persistence.enabled=true \
+        -f grafana/dashboards/provider.yaml \
+        --set-file dashboards.default.default.json=grafana/dashboards/kubernetes.json \
+        -f grafana/datasources/datasources.yaml \
+        --set admin.existingSecret=grafana-admin \
+        --set "grafana\.ini".server.domain=localhost \
+        --set-string "grafana\.ini".server.root_url="%(protocol)s://%(domain)s:%(http_port)s/admin/grafana/" \
+        --set "grafana\.ini".server.serve_from_sub_path=true
     $ cat <<EOF | kubectl apply -f -
     apiVersion: extensions/v1beta1
     kind: Ingress
@@ -280,9 +287,11 @@ TODO
     EOF
     </code></pre>
 
-3. Harbor
+3. Cert Manager
 
-4. maintainance
+4. Harbor
+
+5. maintainance
 
    - possible to add/remove worker
    - master ha

@@ -1,0 +1,61 @@
+---
+- name: debian | install nfs-server nfs-common
+  apt:
+    name:
+      - nfs-server
+      - nfs-common
+      - jq
+  become: true
+  register: result
+  until: result is successful
+
+- name: Disable NFS by default
+  service:
+    name: nfs-server
+    state: stopped
+    enabled: false
+  become: true
+
+- name: Create data folder
+  file:
+    path: /opt/nfs/data
+    state: directory
+    mode: '1777'
+  become: true
+
+- name: Configuring NFS
+  template:
+    src: etc/exports.j2
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: "u=rw,g=r,o=r"
+  become: true
+
+- name: Adding NFS script of heartbeat
+  template:
+    src: etc/ha.d/resource.d/nfs
+    dest: /etc/ha.d/resource.d/nfs
+    owner: root
+    group: root
+    mode: "u=rwx,g=rx,o=rx"
+  become: true
+
+- name: Adding NFS to heartbeat management
+  shell: grep -q nfs /etc/ha.d/haresources || sed -i 's/.* k3s/& nfs k3s/' /etc/ha.d/haresources
+
+- name: Finding primary
+  shell: drbd-overview | grep -q Primary/Secondary
+  become: true
+  register: _primary
+  failed_when: _primary.rc !=0 and _primary.rc != 1
+
+- name: Restarting NFS server
+  service:
+    name: nfs-server
+    state: restarted
+  become: true
+  when: _primary.rc == 0
+
+- include_tasks: chart.yml
+  when: _primary.rc == 0

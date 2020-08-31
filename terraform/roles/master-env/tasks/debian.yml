@@ -23,7 +23,7 @@
 
 # not work
 - name: Set default shell to zsh
-  shell: usermod $USER -s /bin/zsh
+  command: chsh -s /bin/zsh {{ ansible_user_id }}
   become: true
 
 ## kubernets
@@ -59,7 +59,7 @@
 - name: Query helm installed
   command: helm version
   register: _helm_status
-  ignore_errors: yes
+  failed_when: _helm_status.rc !=0 and _helm_status.rc != 1
 
 - name: Install helm
   shell: curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
@@ -84,7 +84,7 @@
 - name: Query ansible installed
   command: .local/bin/ansible-playbook --version
   register: _ansible_status
-  ignore_errors: yes
+  failed_when: _ansible_status.rc !=0 and _ansible_status.rc != 1
 
 - name: Installing ansible
   command: pip3 install ansible
@@ -105,3 +105,13 @@
     dest: /opt/nfs/deploy
   become: true
   when: _primary_node_status.rc == 0
+
+## tools
+- name: Installing tools
+  apt:
+    name:
+      - sysstat
+      - iotop
+  become: true
+  register: result
+  until: result is successful

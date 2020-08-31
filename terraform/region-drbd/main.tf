@@ -52,6 +52,7 @@ resource "libvirt_domain" "default" {
 resource "libvirt_network" "k8snet" {
   # the name used by libvirt
   name = "k8snet-${var.instance.offset}"
+  autostart = true
 
   # mode can be: "nat" (default), "none", "route", "bridge"
   mode = "bridge"
@@ -61,6 +62,7 @@ resource "libvirt_network" "k8snet" {
 resource "libvirt_network" "drbdnet" {
   # the name used by libvirt
   name = "drbdnet-${var.instance.offset}"
+  autostart = true
   addresses = ["192.168.254.0/24"]
 
   # mode can be: "nat" (default), "none", "route", "bridge"
@@ -72,7 +74,7 @@ resource "libvirt_network" "drbdnet" {
 resource "libvirt_pool" "ubuntu" {
   name = "ubuntu-${var.instance.offset}"
   type = "dir"
-  path = "/tmp/terraform-provider-libvirt-pool-ubuntu-${var.instance.offset}"
+  path = "/var/lib/libvirt/images/terraform-provider-libvirt-pool-ubuntu-${var.instance.offset}"
 }
 
 resource "libvirt_volume" "ubuntu1804" {

@@ -1,0 +1,26 @@
+#!/bin/sh
+
+. /etc/ha.d/shellfuncs
+case "$1" in
+start)
+  res=`systemctl start nfs-server`
+  ret=$?
+  ha_log $res
+  exit $ret
+  ;;
+stop)
+  res=`systemctl stop nfs-server`
+  ret=$?
+  ha_log $res
+  exit $ret
+  ;;
+status)
+  systemctl is-active nfs-server | grep -qw active
+  exit $?
+  ;;
+*)
+  echo "Usage: pgsql {start|stop|status}"
+  exit 1
+  ;;
+esac
+exit 0

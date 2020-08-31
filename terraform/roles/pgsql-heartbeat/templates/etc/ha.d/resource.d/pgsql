@@ -1,0 +1,25 @@
+#!/bin/sh
+
+. /etc/ha.d/shellfuncs
+case "$1" in
+start)
+  res=`pg_ctlcluster 12 main start`
+  ret=$?
+  ha_log $res
+  exit $ret
+  ;;
+stop)
+  res=`pg_ctlcluster 12 main stop`
+  ret=$?
+  ha_log $res
+  exit $ret
+  ;;
+status)
+  pg_lsclusters
+  ;;
+*)
+  echo "Usage: pgsql {start|stop|status}"
+  exit 1
+  ;;
+esac
+exit 0
