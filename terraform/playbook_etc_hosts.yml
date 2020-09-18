@@ -1,6 +1,0 @@
----
-- hosts: all
-  vars_files:
-    - user_vars.yml
-  roles:
-    - role: ansible-etc-hosts

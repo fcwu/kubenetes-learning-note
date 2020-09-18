@@ -1,0 +1,27 @@
+---
+- name: Querying helm stable repo
+  shell: helm repo list | grep -w stable
+  register: _repo
+  failed_when: _repo.rc != 0 and _repo.rc != 1
+
+- name: Adding stable repo
+  command: helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+  when: _repo.rc != 0
+
+- name: Querying helm charts
+  shell: helm list -A -o json  | jq -r '.[].name' | grep -w nfs-client
+  failed_when: _helm.rc !=0 and _helm.rc != 1
+  register: _helm
+
+- name: Adding nfs chart
+  command: >
+    helm install nfs-client stable/nfs-client-provisioner
+    -n kube-system
+    --set nfs.server=192.168.5.10
+    --set nfs.path=/opt/nfs/data
+  when: _helm.rc != 0
+
+- name: Enable nfs-client
+  command: >
+    kubectl patch storageclass nfs-client
+    -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'

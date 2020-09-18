@@ -1,0 +1,96 @@
+# - name: debug
+#   hosts: localhost
+#   gather_facts: no
+#   tasks:
+#     - debug:
+#         msg: |
+
+# - name: debug
+#   hosts: all
+#   gather_facts: no
+#   tasks:
+#     - name: Copy using inline content
+#       copy:
+#         content: |
+#           #!/bin/sh
+#           echo "[Node] {{ inventory_hostname }}"
+#           echo "    Role        : `grep -q server /proc/$(pidof k3s)/comm && echo server || echo worker`"
+#           echo "    External IP : `ip a s ens3 | sed -e '/inet /!d' -e 's/.*inet \([^ ]\+\).*/\1/' | tr '\n' ' '`"
+#           echo "    Internal IP : `ip a s ens4 | sed -e '/inet /!d' -e 's/.*inet \([^ ]\+\).*/\1/' | tr '\n' ' '`"
+#           echo "    SSH         : `systemctl status ssh | grep Active: | sed 's/ \+Active: //'`"
+#           echo "    DRBD        : `drbd-overview | sed 's/^ \+//'`"
+#           echo "    K3S         : `systemctl status k3s | grep Active: | sed 's/ \+Active: //'`"
+#           echo "    PostgreSQL  : `pg_lsclusters -h`"
+#         dest: /tmp/debug.sh
+#         mode: '0755'
+#     - name: run
+#       command: /tmp/debug.sh
+#       register: debug
+#       become: true
+#     - debug: msg="{{ debug.stdout }}"
+
+- name: debug
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Copy using inline content
+      copy:
+        content: |
+          #!/bin/sh
+          echo "Role        : `grep -q server /proc/$(pidof k3s)/comm && echo server || echo worker`"
+          echo "External IP : `ip a s ens3 | sed -e '/inet /!d' -e 's/.*inet \([^ ]\+\).*/\1/' | tr '\n' ' '`"
+          echo "Internal IP : `ip a s ens4 | sed -e '/inet /!d' -e 's/.*inet \([^ ]\+\).*/\1/' | tr '\n' ' '`"
+          echo "SSH         : `systemctl status ssh | grep Active: | sed 's/ \+Active: //'`"
+          echo "DRBD        : `drbd-overview | sed 's/^ \+//'`"
+          echo "K3S         : `systemctl status k3s | grep Active: | sed 's/ \+Active: //'`"
+          echo "PostgreSQL  : `pg_lsclusters -h`"
+        dest: /tmp/debug.sh
+        mode: '0755'
+    - name: run
+      command: /tmp/debug.sh
+      register: debug
+      become: true
+    - name: run
+      command: helm list -A
+      register: helm
+    - debug:
+        msg: |
+          Virtual External IP: {{ drbd_vip_exgress }}
+          Virtual Internal IP: {{ drbd_vip_ingress }}
+      run_once: yes
+    - debug: msg="{{ debug.stdout }}"
+    - debug: msg="{{ helm.stdout }}"
+      run_once: yes
+
+# Virtual External IP:     10.144.48.103
+# Virtual Internal IP:      192.168.5.10
+# [Node] drbd1
+#     Role:                       master
+#     External IP:         10.144.48.104
+#     Internal IP:          192.168.5.11
+#     SSH:                        active
+#     DRBD:                      primary
+#     K3S:                 active/server
+#     Datastore:                  active
+# [Node] drbd2
+#     Role:                       master
+#     External Address:    10.144.48.105
+#     Internal IP:          192.168.5.12
+#     SSH:                        active
+#     DRBD:                    secondary
+#     K3S:               inactive/server
+#     Datastore:                inactive
+# [Node] worker1
+#     Role:                       worker
+#     External Address:              N/A
+#     Internal IP:          192.168.5.21
+#     SSH:                        active
+#     DRBD:                          N/A
+#     K3S: active/inactive, server/agent
+#     Datastore:                     N/A
+# [Storage] NFS Client              Good
+# [Network] Traefik                 Good
+# [Service] Cert Manager            Good
+# [Service] Harbor                   Bad
+# [Service] Prometheus              Good
+# [Service] Grafana                 Good

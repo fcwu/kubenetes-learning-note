@@ -1,0 +1,3 @@
+---
+drbd_interface: ens4
+drbd_network_shared_secret: _DRBD_SHARED_SECRET_

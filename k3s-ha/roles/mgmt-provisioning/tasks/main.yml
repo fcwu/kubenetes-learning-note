@@ -1,0 +1,20 @@
+---
+- name: Checking terraform directory
+  local_action:
+    module: stat
+    path: "{{ inventory_dir }}/terraform"
+  register: _terraform_dir
+
+- name: Copying terraform to inventory
+  local_action:
+    module: copy
+    src: "terraform/libvirt/"
+    dest: "{{ inventory_dir }}/terraform/"
+    mode: preserve
+  when: not _terraform_dir['stat']['exists']
+
+- name: Provisioning manager(s)
+  local_action:
+    module: command
+    cmd: terraform apply -auto-approve
+    chdir: "{{ inventory_dir }}/terraform"

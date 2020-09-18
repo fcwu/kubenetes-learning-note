@@ -1,0 +1,4 @@
+---
+k3s_fqdn: joplin.mycluster
+drbd_vip_exgress: 10.144.48.103
+drbd_vip_ingress: 192.168.5.10

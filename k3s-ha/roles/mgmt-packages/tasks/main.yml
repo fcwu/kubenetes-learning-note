@@ -1,0 +1,34 @@
+---
+- name: debian | hostname
+  become: true
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: debian | updating packages
+  apt:
+    name:
+      - linux-image-extra-virtual
+      - ntp
+    update_cache: yes
+  become: true
+  register: result
+  until: result is successful
+
+- name: debian | configuring ntp
+  template:
+    src: etc/ntp.conf.j2
+    dest: /etc/ntp.conf
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  notify: restart ntp
+  become: true
+
+- name: main | updating /etc/hosts (localhost)
+  template:
+    src: etc/hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: 0644
+  become: true

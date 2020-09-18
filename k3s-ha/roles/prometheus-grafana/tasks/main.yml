@@ -1,0 +1,81 @@
+---
+- name: Querying helm stable repo
+  shell: helm repo list | grep -w stable
+  register: _repo
+  failed_when: _repo.rc !=0 and _repo.rc != 1
+
+- name: Adding stable repo
+  command: helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+  when: _repo.rc != 0
+
+- name: Querying prometheus charts
+  shell: helm list -A -o json  | jq -r '.[].name' | grep -w prometheus-1
+  failed_when: _helm.rc != 0 and _helm.rc != 1
+  register: _helm
+
+- name: Installing prometheus charts
+  command: >
+    helm upgrade --install prometheus-1 stable/prometheus
+    --namespace monitoring
+    --create-namespace
+    --set server.global.scrape_interval=10s
+  when: _helm.rc != 0
+
+- name: Querying grafana charts
+  shell: helm list -A -o json  | jq -r '.[].name' | grep -w grafana
+  failed_when: _helm.rc != 0 and _helm.rc != 1
+  register: _helm
+
+- name: Deleting grafana secret
+  command: >
+    kubectl delete secret grafana-admin --namespace monitoring
+  register: _cmd
+  failed_when: _cmd.rc != 0 and _cmd.rc != 1
+  when: _helm.rc != 0
+
+- name: Adding grafana secret
+  command: >
+    kubectl create secret generic grafana-admin
+    --from-literal=admin-user=admin
+    --from-literal=admin-password=admin
+    --namespace monitoring
+  when: _helm.rc != 0
+
+- name: Copying grafana settings
+  synchronize:
+    src: grafana
+    dest: ./
+
+- name: Adding chart grafana
+  command: >
+    helm upgrade --install grafana stable/grafana
+    --namespace monitoring
+    --set persistence.enabled=true
+    -f grafana/dashboards/provider.yaml
+    --set-file dashboards.default.default.json=grafana/dashboards/kubernetes.json
+    -f grafana/datasources/datasources.yaml
+    --set admin.existingSecret=grafana-admin
+    --set "grafana\.ini".server.domain=localhost
+    --set-string "grafana\.ini".server.root_url="%(protocol)s://%(domain)s:%(http_port)s/admin/grafana/"
+    --set "grafana\.ini".server.serve_from_sub_path=true
+  when: _helm.rc != 0
+
+- name: Adding grafana ingress
+  shell: |
+    cat <<EOF | kubectl apply -n monitoring -f -
+    apiVersion: extensions/v1beta1
+    kind: Ingress
+    metadata:
+      name: grafana
+      annotations:
+        traefik.frontend.rule.type: PathPrefixStrip
+    spec:
+      rules:
+      - http:
+          paths:
+          - path: /admin/grafana
+            backend:
+              serviceName: grafana
+              servicePort: 80
+    EOF
+  when: _helm.rc != 0

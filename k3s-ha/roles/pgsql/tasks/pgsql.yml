@@ -1,0 +1,141 @@
+- name: Promote to primary
+  command: drbdadm primary r0
+  become: true
+
+- name: Mount DRBD
+  command: mount -t ext4 /dev/drbd0 /opt/nfs
+  # 32 already mount
+  failed_when: _cmd.rc != 0 and _cmd.rc != 32
+  register: _cmd
+  become: true
+
+- name: Stop pgsql
+  command: pg_ctlcluster 12 main stop
+  failed_when: _cmd.rc != 0 and _cmd.rc != 2
+  register: _cmd
+  become: true
+
+- name: Move pgsql directory
+  shell: |
+    [ -l "/var/lib/postgresql/" ] && exit 0
+    mv /var/lib/postgresql /opt/nfs/
+    ln -sf /opt/nfs/postgresql /var/lib/postgresql
+  become: true
+
+- name: Configuring pgsql access list
+  template:
+    src: etc/postgresql/12/main/pg_hba.conf.j2
+    dest: /etc/postgresql/12/main/pg_hba.conf
+    owner: postgres
+    group: postgres
+    mode: "u=rw,g=r,o=r"
+  become: true
+
+- name: Configuring pgsql listening address
+  template:
+    src: etc/postgresql/12/main/conf.d/k3s.conf
+    dest: /etc/postgresql/12/main/conf.d/k3s.conf
+    owner: postgres
+    group: postgres
+    mode: "u=rw,g=r,o=r"
+  become: true
+
+- name: Start pgsql
+  command: pg_ctlcluster 12 main start
+  become: true
+
+- name: Create a new database with name k3s
+  postgresql_db:
+    name: k3s
+  become: true
+  become_user: postgres
+
+- name: Creating pgsql k3s user
+  postgresql_user:
+    db: k3s
+    name: k3s
+    password: k3s
+    priv: "ALL"
+  become: true
+  become_user: postgres
+
+- name: Create a new database with name registry
+  postgresql_db:
+    name: registry
+  become: true
+  become_user: postgres
+
+- name: Create a new database to user harbor
+  postgresql_user:
+    db: registry
+    name: harbor
+    password: harbor
+    priv: "ALL"
+  become: true
+  become_user: postgres
+
+- name: Create a new database with name registry
+  postgresql_db:
+    name: clair
+  become: true
+  become_user: postgres
+
+- name: Create a new database with user harbor
+  postgresql_user:
+    db: clair
+    name: harbor
+    no_password_changes: yes
+    priv: "ALL"
+  become: true
+  become_user: postgres
+
+- name: Create a new database with name registry
+  postgresql_db:
+    name: notary_server
+  become: true
+  become_user: postgres
+
+- name: Create a new database with user harbor
+  postgresql_user:
+    db: notary_server
+    name: harbor
+    no_password_changes: yes
+    priv: "ALL"
+  become: true
+  become_user: postgres
+
+- name: Create a new database with name registry
+  postgresql_db:
+    name: notary_signer
+  become: true
+  become_user: postgres
+
+- name: Create a new database with user harbor
+  postgresql_user:
+    db: notary_signer
+    name: harbor
+    no_password_changes: yes
+    priv: "ALL"
+  become: true
+  become_user: postgres
+
+- name: Adding heartbeat pgsql script
+  template:
+    src: etc/ha.d/resource.d/pgsql
+    dest: /etc/ha.d/resource.d/pgsql
+    owner: root
+    group: root
+    mode: "u=rwx,g=rx,o=rx"
+  become: true
+
+- name: Stop pgsql
+  command: pg_ctlcluster 12 main stop
+  become: true
+
+- name: Umount DRBD
+  command: umount /opt/nfs
+  become: true
+
+- name: Tear down DRBD
+  command: drbdadm secondary r0
+  become: true

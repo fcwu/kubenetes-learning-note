@@ -1,0 +1,10 @@
+---
+- name: Checking K3S exists
+  stat:
+    path: "/usr/local/bin/k3s"
+  register: _k3s_master_binary_status
+
+- name: Install K3S server
+  shell: curl -sfL https://get.k3s.io | sh -s - --datastore-endpoint="postgres://k3s:k3s@{{ drbd_vip_ingress }}:5432/k3s" --disable local-storage
+  become: true
+  when: not _k3s_master_binary_status['stat']['exists']

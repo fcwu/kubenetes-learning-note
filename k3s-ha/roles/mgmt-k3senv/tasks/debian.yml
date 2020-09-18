@@ -1,0 +1,107 @@
+---
+## ZSH
+- name: Installing zsh
+  apt:
+    name: zsh
+  become: true
+  register: result
+  until: result is successful
+
+- name: Querying oh-my-zsh exists
+  stat:
+    path: .oh-my-zsh
+  register: _ohmyzsh_stat
+
+- name: Installing oh-my-zsh
+  shell: curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh
+  when: not _ohmyzsh_stat['stat']['exists']
+
+- name: Configuring zshrc
+  template:
+    src: dot.zshrc.j2
+    dest: .zshrc
+
+# not work
+- name: Set default shell to zsh
+  command: chsh -s /bin/zsh {{ ansible_user_id }}
+  become: true
+
+## kubernets
+
+- name: Querying k3s exists
+  stat:
+    path: "/etc/rancher/k3s/k3s.yaml"
+  register: _k3s_stat
+
+- name: Set global kubeconfig permission
+  file:
+    path: "/etc/rancher/k3s/k3s.yaml"
+    owner: "{{ ansible_user }}"
+  become: true
+  when: _k3s_stat['stat']['exists']
+
+- name: Create .kube folder
+  file:
+    path: "{{ ansible_user_dir }}/.kube"
+    state: directory
+    mode: '0755'
+
+- name: Copy kubeconfig
+  copy:
+    src: "/etc/rancher/k3s/k3s.yaml"
+    dest: "{{ ansible_user_dir }}/.kube/config"
+    remote_src: yes
+    owner: "{{ ansible_user }}"
+    mode: "0600"
+  become: true
+
+- name: Query helm installed
+  command: which helm
+  register: _helm_status
+  failed_when: _helm_status.rc != 0 and _helm_status.rc != 1
+
+- name: Install helm
+  shell: curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+  when: _helm_status.rc == 1
+
+## Python
+- name: Installing python3 pip
+  apt:
+    name: python3-pip
+  become: true
+  register: result
+  until: result is successful
+
+- name: Query ansible installed
+  command: .local/bin/ansible-playbook --version
+  register: _ansible_status
+  failed_when: _ansible_status.rc != 0 and _ansible_status.rc != 2
+
+- name: Installing ansible
+  command: pip3 install ansible
+  when: _ansible_status.rc != 0
+
+## Deployment scripts
+- name: Query primary node
+  command:
+    cmd: grep -wq /opt/nfs /proc/mounts
+  register: _primary_node_status
+  failed_when: _primary_node_status.rc != 0 and _primary_node_status.rc != 1
+  become: true
+
+- name: Synchronizing configurations
+  synchronize:
+    src: "{{ playbook_dir }}"
+    dest: /opt/nfs/deploy
+  become: true
+  when: _primary_node_status.rc == 0
+
+## tools
+- name: Installing tools
+  apt:
+    name:
+      - sysstat
+      - iotop
+  become: true
+  register: result
+  until: result is successful

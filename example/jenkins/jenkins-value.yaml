@@ -1,0 +1,24 @@
+agent:
+  podTemplates:
+    python: |
+      - name: jnlp
+        label: jenkins-python
+        containers:
+          - name: jnlp
+            image: dorowu/moxa-build:1.1
+            args: "^${computer.jnlpmac} ^${computer.name}"
+            envVars:                 
+              - envVar:
+                  key: "JENKINS_URL"
+                  value: "http://jenkins1.jenkins.svc.cluster.local:8080"      
+            alwaysPullImage: false
+            ttyEnabled: false
+            privileged: "false"
+            resourceLimitCpu: 512m         
+            resourceLimitMemory: 512Mi
+            resourceRequestCpu: 512m                    
+            resourceRequestMemory: 512Mi         
+            runAsUser:                         
+            runAsGroup:                     
+            ttyEnabled: false            
+            workingDir: /home/jenkins     

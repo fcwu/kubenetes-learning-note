@@ -1,0 +1,54 @@
+---
+# prepare provisioning node
+#   current node
+
+- name: Preparing provisioning nodes
+  hosts: provisioning-node
+
+- name: Provisioning managers
+  hosts: managers
+  gather_facts: no
+  roles:
+    - role: mgmt-provisioning
+      run_once: true
+    - role: mgmt-packages
+  tags: ["mgmt", "provisioning"]
+
+- name: Setup DRBD and PostgreSQL
+  hosts: drbd
+  gather_facts: yes
+  roles:
+    - role: drbd
+    - role: pgsql
+  tags: ["mgmt", "drbd"]
+
+- name: Installing k3s server
+  hosts: managers
+  gather_facts: yes
+  roles:
+    - role: k3s-server
+    - role: mgmt-k3senv
+  tags: ["mgmt", "k3s"]
+
+- name: Installing cluster services
+  hosts: managers[0]
+  gather_facts: yes
+  roles:
+    - role: csi-nfs
+      tags: ["csi", "nfs"]
+    - role: prometheus-grafana
+      tags: ["monitoring"]
+    - role: cert-manager
+      tags: ["cert-manager"]
+    - role: harbor
+      tags: ["harbor"]
+    # air-gapped: apt server
+  tags: ["mgmt", "service"]
+
+- hosts: workers
+  roles: []
+    # provision compute nodes
+    # - role: worker-nodes
+    #   tags: ["worker"]
+
+    # k8s on compute nodes

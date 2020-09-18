@@ -1,0 +1,72 @@
+---
+- name: Querying helm harbor repo
+  shell: helm repo list | grep -w harbor
+  failed_when: _repo.rc !=0 and _repo.rc != 1
+  register: _repo
+
+- name: Adding harbor repo
+  command: helm repo add harbor https://helm.goharbor.io
+  when: _repo.rc != 0
+
+- name: Querying harbor charts
+  shell: helm list -n harbor -o json  | jq -r '.[].name' | grep -w harbor1
+  failed_when: _helm.rc !=0 and _helm.rc != 1
+  register: _helm
+
+- name: Adding harbor helm chart
+  command: >
+    helm upgrade --install harbor1 harbor/harbor
+        -n harbor --create-namespace
+        --set expose.tls.enabled=false
+        --set-string expose.ingress.annotations."ingress\.kubernetes\.io/ssl-redirect"=false
+        --set-string expose.ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"=false
+        --set externalURL=http://harbor.svc.{{ k3s_fqdn }}
+        --set expose.ingress.hosts.core=harbor.svc.{{ k3s_fqdn }}
+        --set expose.ingress.hosts.notary=notary.svc.{{ k3s_fqdn }}
+        --set registry.relativeurls=true
+        --set clair.enabled=false
+        --set database.type=external
+        --set database.external.host=192.168.5.10
+        --set database.external.username=harbor
+        --set database.external.password=harbor
+  when: _helm.rc != 0
+
+- name: Waiting ingress created
+  command: kubectl get ingress harbor1-harbor-ingress -n harbor
+  retries: 20
+  delay: 3
+  when: _helm.rc != 0
+
+- name: Query ingress
+  shell: >
+    kubectl get ingress harbor1-harbor-ingress -n harbor -o json
+    | jq '.spec.tls[].secretName'
+    | grep -w harbor.svc.{{ k3s_fqdn }}-cert
+  failed_when: _helm.rc !=0 and _helm.rc != 1
+  register: _ingress
+
+- name: Adding certificate
+  shell: |
+    cat << EOF | kubectl create -n harbor -f -
+    apiVersion: cert-manager.io/v1alpha2
+    kind: Certificate
+    metadata:
+        name: harbor-cert
+        namespace: harbor
+    spec:
+        commonName: harbor.svc.{{ k3s_fqdn }}
+        secretName: harbor.svc.{{ k3s_fqdn }}-cert
+        issuerRef:
+            name: ca-issuer
+            kind: ClusterIssuer
+        dnsNames:
+        - harbor.svc.{{ k3s_fqdn }}
+    EOF
+  when: _ingress.rc != 0
+
+- name: Adding ingress
+  shell: >
+    kubectl get ingress harbor1-harbor-ingress -n harbor -o json
+    | jq '.spec.tls[0]={"hosts":["harbor.svc.{{ k3s_fqdn }}"],"secretName":"harbor.svc.joplin.mycluster-cert"}'
+    | kubectl apply -f -
+  when: _ingress.rc != 0

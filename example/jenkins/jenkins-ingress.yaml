@@ -1,0 +1,14 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: jenkins
+spec:
+  rules:
+  - host: jenkins.office.dorowu.com
+    http:
+      paths:
+        - path: /
+          backend:
+            serviceName: jenkins
+            servicePort: 8080
+

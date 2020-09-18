@@ -1,8 +1,0 @@
----
-- name: debian | updating packages
-  apt:
-    name: linux-image-extra-virtual
-    update_cache: yes
-  become: true
-  register: result
-  until: result is successful
